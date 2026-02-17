@@ -2,7 +2,7 @@ Package: amore
 Title: Advanced Modelling of Relational Events
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "Francisco", family = "Richter", role = c("aut", "cre"))
+    person(given = "Francisco", family = "Richter", email = "richtf@usi.ch", role = c("aut", "cre"))
 Description: Utilities for simulating and prototyping relational event models,
     including helpers to generate dynamic event sequences and covariate
     processes for sender and receiver sets.
@@ -13,9 +13,12 @@ Imports:
 Suggests: 
     testthat (>= 3.1.0),
     roxygen2 (>= 7.3.0),
-    pkgdown (>= 2.0.0)
+    pkgdown (>= 2.0.0),
+    knitr,
+    rmarkdown
 Encoding: UTF-8
 LazyData: true
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
+VignetteBuilder: knitr

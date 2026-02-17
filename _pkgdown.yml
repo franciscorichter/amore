@@ -1,0 +1,30 @@
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  mathjax: true
+
+navbar:
+  structure:
+    left: [reference, articles]
+    right: [github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/franciscorichter/amore
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Articles
+      href: articles/index.html
+
+reference:
+  - title: "Simulation helpers"
+    contents:
+      - simulate_relational_events
+      - simulate_actor_covariates
+
+articles:
+  - title: "Get started"
+    contents:
+      - simulation-demo
