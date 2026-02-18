@@ -1,4 +1,4 @@
-# amore
+# ![amore logo](reference/figures/logo-github-dark.png) amore
 
 ![status:
 prototype](https://img.shields.io/badge/status-prototype-blue)[![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
