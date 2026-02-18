@@ -1,4 +1,4 @@
-# amore
+# <picture><source media="(prefers-color-scheme: dark)" srcset="man/figures/logo-github-dark.png" /><source media="(prefers-color-scheme: light)" srcset="man/figures/logo-github-light.png" /><img src="man/figures/logo-github-dark.png" width="28" style="vertical-align: middle;" alt="amore logo" /></picture> amore
 
 ![status: prototype](https://img.shields.io/badge/status-prototype-blue)
 [![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
