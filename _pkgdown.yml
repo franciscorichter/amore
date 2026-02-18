@@ -5,6 +5,8 @@ template:
   bootswatch: flatly
   mathjax: true
   favicon: man/figures/logo.png
+  assets:
+    - pkgdown/extra.css
 
 navbar:
   structure:
