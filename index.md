@@ -1,22 +1,24 @@
 # amore
 
-![amore logo](reference/figures/logo-github-dark.png)
-
 ![status:
 prototype](https://img.shields.io/badge/status-prototype-blue)[![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://img.shields.io/badge/docs-pkgdown-blue)](https://franciscorichter.github.io/amore/)
 
-Advanced Modelling of Relational Events (amore) is an R package for
-simulating and prototyping relational event models, focused on dynamic
-network data and covariate processes.
+**amore** (Advanced Modelling of Relational Events) is an R package for
+**simulation and inference** in relational event models (REMs). It
+targets dynamic network data in continuous time, with a focus on
+reproducible workflows: event logs, covariates, model fitting, and
+diagnostics.
 
-## Features
+## What it aims to provide
 
-- Simulate exogenous actor covariates (static or time-varying AR(1)
-  processes).
-- Generate relational event sequences with covariate-driven intensities.
-- Ready for extension toward endogenous statistics and estimation
-  routines.
+- **Simulation** utilities for relational event streams and exogenous
+  covariates.
+- **Inference** tools for fitting REMs and working with likelihood-based
+  / counting-process formulations.
+- **Covariate engineering** helpers for both exogenous and endogenous
+  statistics (e.g., reciprocity, recency, shared partners), in a
+  consistent API.
 
 ## Installation
 
@@ -29,10 +31,55 @@ pak::pak("franciscorichter/amore")
 install.packages(".", repos = NULL, type = "source")
 ```
 
-Once installed, load the package and consult the help topics:
-
 ``` r
 library(amore)
+```
+
+## Quick start
+
+``` r
+set.seed(1)
+
+actors <- LETTERS[1:5]
+
+covs <- simulate_actor_covariates(
+  senders = actors,
+  receivers = actors,
+  covariate_names = c("activity", "popularity"),
+  seed = 123
+)
+
+events <- simulate_relational_events(
+  n_events = 100,
+  senders = actors,
+  receivers = actors,
+  event_rate = 2,
+  sender_covariates = covs$sender_covariates[, c("activity", "popularity")],
+  sender_effects = c(0.8, -0.2),
+  allow_loops = FALSE
+)
+
+head(events)
+```
+
+## Inference (package is growing)
+
+The project scope includes estimation and inference for relational event
+models. The specific fitting functions will evolve as new estimators and
+covariate engines land, so the README stays intentionally high-level.
+
+If you are looking for a particular model family (e.g., Cox-type REMs,
+piecewise-constant hazards, Bayesian variants), please open an issue and
+describe the data structure you want to support.
+
+## Documentation
+
+- Reference site + vignette: <https://franciscorichter.github.io/amore/>
+- Issue tracker: <https://github.com/franciscorichter/amore/issues>
+
+For function usage:
+
+``` r
 ?simulate_relational_events
 ?simulate_actor_covariates
 ```
@@ -42,13 +89,8 @@ library(amore)
 - Document + namespace: `devtools::document()`
 - Tests: `devtools::test()`
 - Full check: `devtools::check()`
-- Build vignettes/pkgdown:
+- Build pkgdown site:
   [`pkgdown::build_site()`](https://pkgdown.r-lib.org/reference/build_site.html)
-
-## Documentation
-
-Browse the reference site and vignette at
-<https://franciscorichter.github.io/amore/>.
 
 ## License
 

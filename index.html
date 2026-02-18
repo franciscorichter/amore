@@ -54,17 +54,18 @@
 <img src="logo.png" class="logo" alt=""><h1 id="amore">amore<a class="anchor" aria-label="anchor" href="#amore"></a>
 </h1>
 </div>
-<p align="right">
-<picture><source media="(prefers-color-scheme: dark)" srcset="reference/figures/logo-github-dark.png"><source media="(prefers-color-scheme: light)" srcset="reference/figures/logo-github-light.png"><img src="reference/figures/logo-github-dark.png" width="150" alt="amore logo"></source></source></picture></p>
 <p><img src="https://img.shields.io/badge/status-prototype-blue" alt="status: prototype"><a href="https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://franciscorichter.github.io/amore/"><img src="https://img.shields.io/badge/docs-pkgdown-blue" alt="pkgdown"></a></p>
-<p>Advanced Modelling of Relational Events (amore) is an R package for simulating and prototyping relational event models, focused on dynamic network data and covariate processes.</p>
+<p><strong>amore</strong> (Advanced Modelling of Relational Events) is an R package for <strong>simulation and inference</strong> in relational event models (REMs). It targets dynamic network data in continuous time, with a focus on reproducible workflows: event logs, covariates, model fitting, and diagnostics.</p>
 <div class="section level2">
-<h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
+<h2 id="what-it-aims-to-provide">What it aims to provide<a class="anchor" aria-label="anchor" href="#what-it-aims-to-provide"></a>
 </h2>
 <ul>
-<li>Simulate exogenous actor covariates (static or time-varying AR(1) processes).</li>
-<li>Generate relational event sequences with covariate-driven intensities.</li>
-<li>Ready for extension toward endogenous statistics and estimation routines.</li>
+<li>
+<strong>Simulation</strong> utilities for relational event streams and exogenous covariates.</li>
+<li>
+<strong>Inference</strong> tools for fitting REMs and working with likelihood-based / counting-process formulations.</li>
+<li>
+<strong>Covariate engineering</strong> helpers for both exogenous and endogenous statistics (e.g., reciprocity, recency, shared partners), in a consistent API.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -77,10 +78,54 @@
 <span></span>
 <span><span class="co"># alternatively, install from a local checkout</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"."</span>, repos <span class="op">=</span> <span class="cn">NULL</span>, type <span class="op">=</span> <span class="st">"source"</span><span class="op">)</span></span></code></pre></div>
-<p>Once installed, load the package and consult the help topics:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://franciscorichter.github.io/amore/">amore</a></span><span class="op">)</span></span>
-<span><span class="op">?</span><span class="va">simulate_relational_events</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://franciscorichter.github.io/amore/">amore</a></span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+</h2>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">actors</span> <span class="op">&lt;-</span> <span class="va">LETTERS</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span>
+<span></span>
+<span><span class="va">covs</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_actor_covariates.html">simulate_actor_covariates</a></span><span class="op">(</span></span>
+<span>  senders <span class="op">=</span> <span class="va">actors</span>,</span>
+<span>  receivers <span class="op">=</span> <span class="va">actors</span>,</span>
+<span>  covariate_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"activity"</span>, <span class="st">"popularity"</span><span class="op">)</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">123</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">events</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_relational_events.html">simulate_relational_events</a></span><span class="op">(</span></span>
+<span>  n_events <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  senders <span class="op">=</span> <span class="va">actors</span>,</span>
+<span>  receivers <span class="op">=</span> <span class="va">actors</span>,</span>
+<span>  event_rate <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  sender_covariates <span class="op">=</span> <span class="va">covs</span><span class="op">$</span><span class="va">sender_covariates</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"activity"</span>, <span class="st">"popularity"</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  sender_effects <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="op">-</span><span class="fl">0.2</span><span class="op">)</span>,</span>
+<span>  allow_loops <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">events</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="inference-package-is-growing">Inference (package is growing)<a class="anchor" aria-label="anchor" href="#inference-package-is-growing"></a>
+</h2>
+<p>The project scope includes estimation and inference for relational event models. The specific fitting functions will evolve as new estimators and covariate engines land, so the README stays intentionally high-level.</p>
+<p>If you are looking for a particular model family (e.g., Cox-type REMs, piecewise-constant hazards, Bayesian variants), please open an issue and describe the data structure you want to support.</p>
+</div>
+<div class="section level2">
+<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
+</h2>
+<ul>
+<li>Reference site + vignette: <a href="https://franciscorichter.github.io/amore/" class="uri">https://franciscorichter.github.io/amore/</a>
+</li>
+<li>Issue tracker: <a href="https://github.com/franciscorichter/amore/issues" class="external-link uri">https://github.com/franciscorichter/amore/issues</a>
+</li>
+</ul>
+<p>For function usage:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="op">?</span><span class="va">simulate_relational_events</span></span>
 <span><span class="op">?</span><span class="va">simulate_actor_covariates</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -93,14 +138,9 @@
 </li>
 <li>Full check: <code>devtools::check()</code>
 </li>
-<li>Build vignettes/pkgdown: <code><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">pkgdown::build_site()</a></code>
+<li>Build pkgdown site: <code><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">pkgdown::build_site()</a></code>
 </li>
 </ul>
-</div>
-<div class="section level2">
-<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
-</h2>
-<p>Browse the reference site and vignette at <a href="https://franciscorichter.github.io/amore/" class="uri">https://franciscorichter.github.io/amore/</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
