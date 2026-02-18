@@ -1,6 +1,7 @@
-# amore ![](https://img.shields.io/badge/status-prototype-blue)
+# amore
 
-[![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
+![status:
+prototype](https://img.shields.io/badge/status-prototype-blue)[![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://img.shields.io/badge/docs-pkgdown-blue)](https://franciscorichter.github.io/amore/)
 
 Advanced Modelling of Relational Events (amore) is an R package for
@@ -55,13 +56,14 @@ MIT, see `LICENSE`.
 
 ## Simulation helpers
 
-- [`simulate_relational_events()`](simulate_relational_events.md) :
-  Simulate relational event sequences
-- [`simulate_actor_covariates()`](simulate_actor_covariates.md) :
-  Simulate exogenous actor covariates
+- [`simulate_relational_events()`](https://franciscorichter.github.io/amore/reference/simulate_relational_events.md)
+  : Simulate relational event sequences
+- [`simulate_actor_covariates()`](https://franciscorichter.github.io/amore/reference/simulate_actor_covariates.md)
+  : Simulate exogenous actor covariates
 
 # Articles
 
 ### Get started
 
-- [Simulating relational events](simulation-demo.md):
+- [Simulating relational
+  events](https://franciscorichter.github.io/amore/articles/simulation-demo.md):

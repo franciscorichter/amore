@@ -2,4 +2,5 @@
 
 ### Get started
 
-- [Simulating relational events](simulation-demo.md):
+- [Simulating relational
+  events](https://franciscorichter.github.io/amore/articles/simulation-demo.md):

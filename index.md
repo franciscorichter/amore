@@ -1,6 +1,7 @@
-# amore ![](https://img.shields.io/badge/status-prototype-blue)
+# amore
 
-[![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
+![status:
+prototype](https://img.shields.io/badge/status-prototype-blue)[![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://img.shields.io/badge/docs-pkgdown-blue)](https://franciscorichter.github.io/amore/)
 
 Advanced Modelling of Relational Events (amore) is an R package for
