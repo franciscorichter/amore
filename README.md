@@ -1,10 +1,22 @@
-# <picture><source media="(prefers-color-scheme: dark)" srcset="man/figures/logo-github-dark.png" /><source media="(prefers-color-scheme: light)" srcset="man/figures/logo-github-light.png" /><img src="man/figures/logo-github-dark.png" width="28" style="vertical-align: middle;" alt="amore logo" /></picture> amore
+# amore
+
+<table>
+  <tr>
+    <td>
 
 ![status: prototype](https://img.shields.io/badge/status-prototype-blue)
 [![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://img.shields.io/badge/docs-pkgdown-blue)](https://franciscorichter.github.io/amore/)
 
 **amore** (Advanced Modelling of Relational Events) is an R package for **simulation and inference** in relational event models (REMs). It targets dynamic network data in continuous time, with a focus on reproducible workflows: event logs, covariates, model fitting, and diagnostics.
+
+    </td>
+    <td align="right" width="160">
+      <img src="man/figures/logo-github-light.png#gh-light-mode-only" width="130" alt="amore logo" />
+      <img src="man/figures/logo-github-dark.png#gh-dark-mode-only" width="130" alt="amore logo" />
+    </td>
+  </tr>
+</table>
 
 ## What it aims to provide
 
