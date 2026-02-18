@@ -8,6 +8,7 @@ Description: Utilities for simulating and prototyping relational event models,
     processes for sender and receiver sets.
 License: MIT + file LICENSE
 Depends: R (>= 4.2.0)
+URL: https://franciscorichter.github.io/amore/, https://github.com/franciscorichter/amore
 Imports: 
     stats
 Suggests: 

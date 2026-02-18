@@ -1,5 +1,6 @@
-# amore <img src="https://img.shields.io/badge/status-prototype-blue" align="right" />
+# amore <img src="man/figures/logo.png" align="right" width="150" alt="amore logo" />
 
+![status: prototype](https://img.shields.io/badge/status-prototype-blue)
 [![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://img.shields.io/badge/docs-pkgdown-blue)](https://franciscorichter.github.io/amore/)
 

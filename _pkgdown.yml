@@ -1,7 +1,10 @@
+url: https://franciscorichter.github.io/amore/
+
 template:
   bootstrap: 5
   bootswatch: flatly
   mathjax: true
+  favicon: man/figures/logo.png
 
 navbar:
   structure:
