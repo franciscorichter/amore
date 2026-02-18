@@ -1,9 +1,6 @@
 # amore
 
-![amore
-logo](reference/figures/logo-github-light.png#gh-light-mode-only)![amore
-logo](reference/figures/logo-github-dark.png#gh-dark-mode-only)![amore
-logo](reference/figures/logo-github-white.png)
+![amore logo](reference/figures/logo-github-white.png)
 
 [![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
 [![pkgdown
@@ -72,7 +69,7 @@ head(events)
 
 The project scope includes estimation and inference for relational event
 models. The specific fitting functions will evolve as new estimators and
-covariate engines land, so the README stays intentionally high-level.
+covariate engines land, so the home page stays intentionally high-level.
 
 If you are looking for a particular model family (e.g., Cox-type REMs,
 piecewise-constant hazards, Bayesian variants), please open an issue and
