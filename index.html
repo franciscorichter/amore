@@ -54,15 +54,11 @@
 <img src="logo.png" class="logo" alt=""><h1 id="amore">amore<a class="anchor" aria-label="anchor" href="#amore"></a>
 </h1>
 </div>
-<table class="table"><tr><td>
-<p><img src="https://img.shields.io/badge/status-prototype-blue" alt="status: prototype"><a href="https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://franciscorichter.github.io/amore/"><img src="https://img.shields.io/badge/docs-pkgdown-blue" alt="pkgdown"></a></p>
+<p align="center">
+<img src="reference/figures/logo-github-light.png#gh-light-mode-only" width="180" alt="amore logo"><img src="reference/figures/logo-github-dark.png#gh-dark-mode-only" width="180" alt="amore logo"></p>
+<p align="center">
+<a href="https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://franciscorichter.github.io/amore/"><img src="https://img.shields.io/badge/docs-pkgdown-blue" alt="pkgdown docs"></a> <img src="https://img.shields.io/badge/status-prototype-blue" alt="status prototype"></p>
 <p><strong>amore</strong> (Advanced Modelling of Relational Events) is an R package for <strong>simulation and inference</strong> in relational event models (REMs). It targets dynamic network data in continuous time, with a focus on reproducible workflows: event logs, covariates, model fitting, and diagnostics.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="sc">&lt;</span><span class="er">/</span>td<span class="sc">&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="er">&lt;</span>td align<span class="ot">=</span><span class="st">"right"</span> width<span class="ot">=</span><span class="st">"160"</span><span class="sc">&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="er">&lt;</span>img src<span class="ot">=</span><span class="st">"man/figures/logo-github-light.png#gh-light-mode-only"</span> width<span class="ot">=</span><span class="st">"130"</span> alt<span class="ot">=</span><span class="st">"amore logo"</span> <span class="sc">/</span><span class="er">&gt;</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="er">&lt;</span>img src<span class="ot">=</span><span class="st">"man/figures/logo-github-dark.png#gh-dark-mode-only"</span> width<span class="ot">=</span><span class="st">"130"</span> alt<span class="ot">=</span><span class="st">"amore logo"</span> <span class="sc">/</span><span class="er">&gt;</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="er">&lt;/</span>td<span class="sc">&gt;</span></span></code></pre></div>
-</td></tr></table>
 <div class="section level2">
 <h2 id="what-it-aims-to-provide">What it aims to provide<a class="anchor" aria-label="anchor" href="#what-it-aims-to-provide"></a>
 </h2>
@@ -78,20 +74,20 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install the development version from GitHub</span></span>
 <span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"franciscorichter/amore"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># alternatively, install from a local checkout</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"."</span>, repos <span class="op">=</span> <span class="cn">NULL</span>, type <span class="op">=</span> <span class="st">"source"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://franciscorichter.github.io/amore/">amore</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">actors</span> <span class="op">&lt;-</span> <span class="va">LETTERS</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span>
@@ -131,7 +127,7 @@
 </li>
 </ul>
 <p>For function usage:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="op">?</span><span class="va">simulate_relational_events</span></span>
 <span><span class="op">?</span><span class="va">simulate_actor_covariates</span></span></code></pre></div>
 </div>
