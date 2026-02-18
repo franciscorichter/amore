@@ -2,7 +2,8 @@
 
 ![amore
 logo](reference/figures/logo-github-light.png#gh-light-mode-only)![amore
-logo](reference/figures/logo-github-dark.png#gh-dark-mode-only)
+logo](reference/figures/logo-github-dark.png#gh-dark-mode-only)![amore
+logo](reference/figures/logo-github-white.png)
 
 [![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
 [![pkgdown

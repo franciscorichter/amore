@@ -1,0 +1,7 @@
+.github-only {
+  display: none !important;
+}
+
+.pkgdown-only {
+  display: inline-block !important;
+}
