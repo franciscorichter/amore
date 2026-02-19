@@ -1,4 +1,4 @@
-event_simulator <- function(p, n, b1, fit, seed) {
+event_simulator <- function(p, n, b1, seed) {
   
   set.seed(seed)
   print(seed)
