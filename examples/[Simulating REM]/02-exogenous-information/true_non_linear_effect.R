@@ -8,7 +8,6 @@ range(dist_matrix)
 f_x <- as.vector(sin(-dist_matrix/1.5))
 dist <- as.vector(dist_matrix)
 fit <- gam(f_x ~ s(dist) )
-coefficients <- coef(fit)
 spline_function <- function(dist_matrix, fit) {
   return(predict(fit, newdata = data.frame(dist=dist_matrix)))
 }
