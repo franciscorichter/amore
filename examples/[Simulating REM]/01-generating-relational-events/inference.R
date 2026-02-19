@@ -1,3 +1,4 @@
+library(mgcv)
 source("event-simulator.R")
 
 n_sim = 100
