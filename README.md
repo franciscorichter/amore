@@ -36,37 +36,56 @@ library(amore)
 
 ## Quick start
 
+The Gillespie algorithm generates relational events where inter-event
+times are exponentially distributed with rate equal to the sum of all
+dyadic hazards, and dyads are selected proportionally to their intensity.
+
 ```r
+library(amore)
 set.seed(1)
 
-actors <- LETTERS[1:5]
+p      <- 20
+actors <- as.character(1:p)
 
-covs <- simulate_actor_covariates(
-  senders = actors,
-  receivers = actors,
-  covariate_names = c("activity", "popularity"),
-  seed = 123
-)
+# Dyadic covariate x ~ N(0,1) with true effect b1 = 1
+x        <- matrix(rnorm(p * p), nrow = p, ncol = p)
+b1       <- 1
+baseline <- b1 * x
 
+# Simulate 500 events + 1 control per event for partial likelihood
 events <- simulate_relational_events(
-  n_events = 100,
-  senders = actors,
-  receivers = actors,
-  baseline_rate = 2,
-  sender_covariates = covs$sender_covariates[, c("activity", "popularity")],
-  sender_effects = c(0.8, -0.2),
-  allow_loops = FALSE,
-  n_controls = 2
+  n_events       = 500,
+  senders        = actors,
+  receivers      = actors,
+  baseline_logits = baseline,
+  allow_loops    = FALSE,
+  n_controls     = 1
 )
 
 head(events)
 ```
 
-## Inference (package is growing)
+### Inference with GAM
 
-The project scope includes estimation and inference for relational event models. The specific fitting functions will evolve as new estimators and covariate engines land, so the README stays intentionally high-level.
+The case-control output lets you recover parameters via a GAM:
 
-If you are looking for a particular model family (e.g., Cox-type REMs, piecewise-constant hazards, Bayesian variants), please open an issue and describe the data structure you want to support.
+```r
+library(mgcv)
+
+get_x  <- function(s, r) x[cbind(as.integer(s), as.integer(r))]
+events$x_val <- mapply(get_x, events$sender, events$receiver)
+
+cases    <- events[events$event == 1, ]
+controls <- events[events$event == 0, ]
+cases    <- cases[order(cases$stratum), ]
+controls <- controls[order(controls$stratum), ]
+
+fit_df <- data.frame(y = 1, delta_x = cases$x_val - controls$x_val)
+fit    <- gam(y ~ delta_x - 1, family = binomial, data = fit_df)
+
+coef(fit)
+#> delta_x ≈ 1  (recovers b1)
+```
 
 ## Documentation
 

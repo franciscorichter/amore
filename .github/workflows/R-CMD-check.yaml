@@ -25,6 +25,8 @@ jobs:
           extra-packages: |
             any::rcmdcheck
             any::pkgdown
+            any::testthat
+            any::waldo
           needs: check
       - name: Check
         uses: r-lib/actions/check-r-package@v2

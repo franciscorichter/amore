@@ -7,3 +7,8 @@
 ^docs$
 ^doc$
 ^Meta$
+^\.github$
+^examples$
+^index\.md$
+^amore\.Rcheck$
+^pkgdown$
