@@ -1,7 +1,10 @@
 # amore
 
 <p align="center">
-  <img src="man/figures/logo-github-light.png" width="180" alt="amore logo" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="man/figures/logo-github-dark.png">
+    <img src="man/figures/logo-github-white.png" width="220" alt="amore logo" />
+  </picture>
 </p>
 
 <p align="center">

@@ -4,7 +4,7 @@ template:
   bootstrap: 5
   bootswatch: flatly
   mathjax: true
-  favicon: man/figures/logo.png
+  favicon: man/figures/logo-github-white.png
 
 navbar:
   structure:
