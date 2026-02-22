@@ -94,7 +94,7 @@ non-linear effects via `baseline_logits`.  For example, using geographic
 distance with a smooth true effect:
 
 ```r
-load(system.file("extdata", "dist-USA.RData", package = "amore"))
+data("dist_matrix", package = "amore")
 
 dist_log     <- log(dist_matrix / 100000 + 1)
 true_effect  <- sin(-dist_log / 1.5)
