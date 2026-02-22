@@ -26,6 +26,9 @@ reference:
     contents:
       - simulate_relational_events
       - simulate_actor_covariates
+  - title: "Data"
+    contents:
+      - dist_matrix
 
 articles:
   - title: "Get started"
