@@ -2,8 +2,9 @@ pandoc: 3.1.11
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
+  exogenous-covariates: exogenous-covariates.html
   simulation-demo: simulation-demo.html
-last_built: 2026-02-22T16:53Z
+last_built: 2026-02-22T17:54Z
 urls:
   reference: https://franciscorichter.github.io/amore/reference
   article: https://franciscorichter.github.io/amore/articles
