@@ -132,6 +132,26 @@
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; delta_x ≈ 1  (recovers b1)</span></span></code></pre></div>
 </div>
+<div class="section level3">
+<h3 id="exogenous-dyadic-covariates">Exogenous dyadic covariates<a class="anchor" aria-label="anchor" href="#exogenous-dyadic-covariates"></a>
+</h3>
+<p>The package ships a 56 × 56 US state distance matrix and supports non-linear effects via <code>baseline_logits</code>. For example, using geographic distance with a smooth true effect:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/load.html" class="external-link">load</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"dist-USA.RData"</span>, package <span class="op">=</span> <span class="st">"amore"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">dist_log</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dist_matrix</span> <span class="op">/</span> <span class="fl">100000</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">true_effect</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="op">-</span><span class="va">dist_log</span> <span class="op">/</span> <span class="fl">1.5</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">events</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_relational_events.html">simulate_relational_events</a></span><span class="op">(</span></span>
+<span>  n_events        <span class="op">=</span> <span class="fl">800</span>,</span>
+<span>  senders         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">dist_matrix</span><span class="op">)</span>,</span>
+<span>  receivers       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">dist_matrix</span><span class="op">)</span>,</span>
+<span>  baseline_logits <span class="op">=</span> <span class="va">true_effect</span>,</span>
+<span>  allow_loops     <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  n_controls      <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>See <code><a href="articles/exogenous-covariates.html">vignette("exogenous-covariates")</a></code> for the full workflow including GAM recovery of the non-linear distance effect.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
@@ -143,7 +163,7 @@
 </li>
 </ul>
 <p>For function usage:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="op">?</span><span class="va">simulate_relational_events</span></span>
 <span><span class="op">?</span><span class="va">simulate_actor_covariates</span></span></code></pre></div>
 </div>
