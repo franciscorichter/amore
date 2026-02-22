@@ -43,9 +43,15 @@ simulate_actor_covariates <- function(
   stopifnot(sd >= 0)
   if (!is.null(seed)) {
     old_seed <- get0(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
-    if (!is.null(old_seed)) {
-      on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv))
-    }
+    on.exit({
+      if (is.null(old_seed)) {
+        if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+          rm(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+        }
+      } else {
+        assign(".Random.seed", old_seed, envir = .GlobalEnv)
+      }
+    })
     set.seed(seed)
   }
 
@@ -71,8 +77,9 @@ simulate_actor_covariates <- function(
     if (!length(actors)) {
       return(data.frame(actor = character(0)))
     }
-    values <- matrix(rnorm(length(actors) * length(covariate_names), sd = sd),
-                     nrow = length(actors), byrow = TRUE)
+    values <- matrix(stats::rnorm(length(actors) * length(covariate_names), sd = sd),
+      nrow = length(actors), byrow = TRUE
+    )
     df <- data.frame(actor = as.character(actors), values, stringsAsFactors = FALSE)
     colnames(df)[-1] <- covariate_names
     df
@@ -80,21 +87,25 @@ simulate_actor_covariates <- function(
 
   build_dynamic <- function(actors) {
     if (!length(actors)) {
-      return(data.frame(actor = character(0), time = numeric(0),
-                        covariate = character(0), value = numeric(0)))
+      return(data.frame(
+        actor = character(0), time = numeric(0),
+        covariate = character(0), value = numeric(0)
+      ))
     }
     n_time <- length(time_points)
     output <- vector("list", length(actors))
     for (i in seq_along(actors)) {
       actor_vals <- matrix(0, nrow = n_time, ncol = length(covariate_names))
-      actor_vals[1, ] <- rnorm(length(covariate_names), sd = sd / sqrt(1 - rho^2))
+      actor_vals[1, ] <- stats::rnorm(length(covariate_names), sd = sd / sqrt(1 - rho^2))
       if (n_time > 1) {
         for (t in 2:n_time) {
-          actor_vals[t, ] <- rho * actor_vals[t - 1, ] + rnorm(length(covariate_names), sd = sd)
+          actor_vals[t, ] <- rho * actor_vals[t - 1, ] + stats::rnorm(length(covariate_names), sd = sd)
         }
       }
-      df <- expand.grid(time = time_points, covariate = covariate_names,
-                        KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
+      df <- expand.grid(
+        time = time_points, covariate = covariate_names,
+        KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE
+      )
       df$actor <- actors[i]
       df$value <- as.vector(actor_vals)
       output[[i]] <- df[, c("actor", "time", "covariate", "value")]
