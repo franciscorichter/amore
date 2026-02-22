@@ -87,6 +87,31 @@ coef(fit)
 #> delta_x ≈ 1  (recovers b1)
 ```
 
+### Exogenous dyadic covariates
+
+The package ships a 56 × 56 US state distance matrix and supports
+non-linear effects via `baseline_logits`.  For example, using geographic
+distance with a smooth true effect:
+
+```r
+load(system.file("extdata", "dist-USA.RData", package = "amore"))
+
+dist_log     <- log(dist_matrix / 100000 + 1)
+true_effect  <- sin(-dist_log / 1.5)
+
+events <- simulate_relational_events(
+  n_events        = 800,
+  senders         = rownames(dist_matrix),
+  receivers       = rownames(dist_matrix),
+  baseline_logits = true_effect,
+  allow_loops     = FALSE,
+  n_controls      = 1
+)
+```
+
+See `vignette("exogenous-covariates")` for the full workflow including GAM
+recovery of the non-linear distance effect.
+
 ## Documentation
 
 - Reference site + vignette: <https://franciscorichter.github.io/amore/>
