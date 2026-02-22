@@ -1,8 +1,6 @@
 # amore
 
-![amore
-logo](reference/figures/logo-github-light.png#gh-light-mode-only)![amore
-logo](reference/figures/logo-github-dark.png#gh-dark-mode-only)
+![amore logo](reference/figures/logo-github-light.png)
 
 [![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
 [![pkgdown
@@ -101,7 +99,7 @@ non-linear effects via `baseline_logits`. For example, using geographic
 distance with a smooth true effect:
 
 ``` r
-load(system.file("extdata", "dist-USA.RData", package = "amore"))
+data("dist_matrix", package = "amore")
 
 dist_log     <- log(dist_matrix / 100000 + 1)
 true_effect  <- sin(-dist_log / 1.5)
