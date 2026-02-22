@@ -31,3 +31,4 @@ articles:
   - title: "Get started"
     contents:
       - simulation-demo
+      - exogenous-covariates
