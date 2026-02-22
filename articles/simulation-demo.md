@@ -55,17 +55,17 @@ events <- simulate_relational_events(
   n_events = 20,
   senders = senders,
   receivers = receivers,
-  event_rate = 2,
+  baseline_rate = 2,
   sender_covariates = static_sender[, c("value.activity", "value.popularity")],
   sender_effects = c(0.8, -0.2),
   allow_loops = FALSE
 )
 head(events)
-#>   sender receiver     time
-#> 1     s3       r1 1.185722
-#> 2     s1       r1 1.286483
-#> 3     s2       r2 3.874138
-#> 4     s3       r1 4.107020
-#> 5     s2       r2 4.118887
-#> 6     s2       r2 4.770117
+#>   sender receiver      time
+#> 1     s2       r2 0.1651009
+#> 2     s1       r1 0.1791309
+#> 3     s1       r2 0.5394382
+#> 4     s2       r2 0.5718648
+#> 5     s1       r2 0.5735172
+#> 6     s1       r2 0.6641951
 ```
