@@ -1,6 +1,6 @@
 # amore
 
-![amore logo](reference/figures/logo-github-light.png)
+![amore logo](reference/figures/logo-github-white.png)
 
 [![R-CMD-check](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/franciscorichter/amore/actions/workflows/R-CMD-check.yaml)
 [![pkgdown

@@ -118,7 +118,7 @@ summary(fit)
 #>               edf Ref.df Chi.sq p-value
 #> s(delta_dist)   1      1      0       1
 #> 
-#> R-sq.(adj) =   -Inf   Deviance explained = -Inf%
+#> R-sq.(adj) =    NaN   Deviance explained = -Inf%
 #> UBRE = 0.38879  Scale est. = 1         n = 800
 ```
 
