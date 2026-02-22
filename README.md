@@ -52,10 +52,11 @@ events <- simulate_relational_events(
   n_events = 100,
   senders = actors,
   receivers = actors,
-  event_rate = 2,
+  baseline_rate = 2,
   sender_covariates = covs$sender_covariates[, c("activity", "popularity")],
   sender_effects = c(0.8, -0.2),
-  allow_loops = FALSE
+  allow_loops = FALSE,
+  n_controls = 2
 )
 
 head(events)
