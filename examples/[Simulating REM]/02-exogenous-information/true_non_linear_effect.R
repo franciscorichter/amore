@@ -1,6 +1,6 @@
 library(mgcv)
 library(mgcViz)
-load(file="dist-USA.RData")
+load(file="02-exogenous-information/dist-USA.RData")
 
 dist_matrix <- log(dist_matrix/100000+1)
 range(dist_matrix)
