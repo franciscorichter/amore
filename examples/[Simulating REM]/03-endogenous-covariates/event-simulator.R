@@ -5,7 +5,7 @@ library(mgcv)
 library(mgcViz)
 
 # ------------------------------------------------------------
-# Load US state shapefiles (cartographic boundary version)
+# Load US state
 # ------------------------------------------------------------
 # size of simulation
 states <- states(cb = TRUE)
@@ -38,7 +38,6 @@ source("02-exogenous-information/true_non_linear_effect.R")
 coefficients_plot
 
 ### Linear effect of reciprocity
-# coefficient controlling reciprocity strength in hazard
 b1 = 0.5
 
 # ------------------------------------------------------------
