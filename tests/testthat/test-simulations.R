@@ -6,7 +6,7 @@ test_that("simulate_relational_events generates valid sequences", {
     n_events = 30,
     senders = actors,
     receivers = actors,
-    event_rate = 3,
+    baseline_rate = 3,
     baseline_logits = baseline,
     allow_loops = FALSE
   )
@@ -24,7 +24,7 @@ test_that("simulate_relational_events respects horizon", {
     n_events = 10,
     senders = c("s1", "s2"),
     receivers = c("r1", "r2"),
-    event_rate = 5,
+    baseline_rate = 5,
     horizon = 0
   )
   expect_equal(nrow(events), 0)

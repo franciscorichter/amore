@@ -59,7 +59,7 @@ events <- simulate_relational_events(
   n_events = 20,
   senders = senders,
   receivers = receivers,
-  event_rate = 2,
+  baseline_rate = 2,
   sender_covariates = static_sender[, c("value.activity", "value.popularity")],
   sender_effects = c(0.8, -0.2),
   allow_loops = FALSE

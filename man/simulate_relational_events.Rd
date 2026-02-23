@@ -8,7 +8,7 @@ simulate_relational_events(
   n_events,
   senders,
   receivers,
-  event_rate = 1,
+  baseline_rate = 1,
   start_time = 0,
   horizon = Inf,
   baseline_logits = NULL,
@@ -16,7 +16,8 @@ simulate_relational_events(
   sender_effects = NULL,
   receiver_covariates = NULL,
   receiver_effects = NULL,
-  allow_loops = FALSE
+  allow_loops = FALSE,
+  n_controls = 0
 )
 }
 \arguments{
@@ -26,8 +27,8 @@ simulate_relational_events(
 
 \item{receivers}{Character vector listing the receiver set \eqn{\mathcal{R}}.}
 
-\item{event_rate}{Positive scalar controlling the expected number of events
-per unit time in the simulated point process.}
+\item{baseline_rate}{Positive scalar. A constant baseline hazard multiplier
+applied to all dyads. Defaults to 1.}
 
 \item{start_time}{Initial time stamp.}
 
@@ -50,32 +51,50 @@ receiver.}
 \code{receiver_covariates}. Required when receiver covariates are supplied.}
 
 \item{allow_loops}{Logical; whether sender and receiver can coincide.}
+
+\item{n_controls}{Integer; number of non-events (controls) to sample
+uniformly at random for each realized event. If \code{n_controls > 0}, the
+function returns a case-control data frame suitable for conditional logistic
+regression / GAM modeling. Defaults to 0.}
 }
 \value{
-A tibble-like data.frame with columns \code{sender}, \code{receiver}
-and \code{time} of length less than or equal to \code{n_events} (the
-horizon can truncate the process).
+If \code{n_controls = 0}, a data.frame with columns \code{sender},
+\code{receiver} and \code{time}. If \code{n_controls > 0}, it returns a
+long-format data.frame with additional columns \code{stratum} (grouping an
+event with its controls) and \code{event} (1 for the realized event,
+0 for controls).
 }
 \description{
 Generate a simple relational event log for a sender set and receiver set
-using a softmax allocation rule over dyadic intensities. The function is
-intentionally lightweight so it can be used for quick experiments and for
-stress-testing follow-up estimation routines.
+using a softmax allocation rule over dyadic intensities. The process follows
+the Gillespie algorithm, where the time between events is drawn from an
+exponential distribution with rate equal to the sum of all dyadic intensities.
 }
 \examples{
 set.seed(1)
 senders <- receivers <- LETTERS[1:3]
 sender_cov <- data.frame(activity = c(0.5, -0.2, 1.1))
 receiver_cov <- data.frame(popularity = c(0.1, 0.3, -0.4))
+# Standard event simulation
 events <- simulate_relational_events(
   n_events = 5,
   senders = senders,
   receivers = receivers,
-  event_rate = 2,
   sender_covariates = sender_cov,
   sender_effects = 1,
   receiver_covariates = receiver_cov,
   receiver_effects = 2
 )
 events
+
+# Case-control generation for partial likelihood inference
+cc_events <- simulate_relational_events(
+  n_events = 5,
+  senders = senders,
+  receivers = receivers,
+  sender_covariates = sender_cov,
+  sender_effects = 1,
+  n_controls = 2
+)
+head(cc_events)
 }

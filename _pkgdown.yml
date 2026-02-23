@@ -4,7 +4,7 @@ template:
   bootstrap: 5
   bootswatch: flatly
   mathjax: true
-  favicon: man/figures/logo.png
+  favicon: man/figures/logo-github-white.png
 
 navbar:
   structure:
@@ -26,8 +26,12 @@ reference:
     contents:
       - simulate_relational_events
       - simulate_actor_covariates
+  - title: "Data"
+    contents:
+      - dist_matrix
 
 articles:
   - title: "Get started"
     contents:
       - simulation-demo
+      - exogenous-covariates
