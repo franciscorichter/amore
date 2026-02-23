@@ -5,8 +5,6 @@
 ^\.DS_Store$
 ^_pkgdown\.yml$
 ^docs$
-^doc$
-^Meta$
 ^\.github$
 ^examples$
 ^index\.md$
