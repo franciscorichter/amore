@@ -58,8 +58,6 @@ remdats <- sapply(1:n_sim, function(x)
                   b0 = b0, b1 = b1, fit, seed=x),
   simplify = FALSE)
 
-save(remdats, file="remdats.RData")
-
 remdat_shifting <- function(remdat, last_contacted, p, n, seed){
   
   # Total observation window length (max event time)
