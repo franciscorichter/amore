@@ -121,7 +121,7 @@ event_simulator <- function(states, p, n, fit, b1, seed) {
     # Sample event proportional to hazard
     event.id<-sample(1:p^2, 1,prob = hazard/sum(hazard))
     
-    # Convert linear index to sender (s) and receiver (r)
+    # Convert index to sender (s) and receiver (r)
     s<-(event.id-1)%%p+1
     r<-(event.id-1)%/%p+1
     

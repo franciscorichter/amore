@@ -1,143 +1,173 @@
-library(tigris)
-library(sf)
-library(geosphere)
-library(mgcv)
-library(mgcViz)
-
-# ------------------------------------------------------------
-# Load US state shapefiles (cartographic boundary version)
-# ------------------------------------------------------------
-# size of simulation
-states <- states(cb = TRUE)
-
-# Convert to simple feature (sf) object for spatial operations
-states_sf <- st_as_sf(states)
-
-# Keep unique state names only
-states <- unique(states$NAME)
-
-# ------------------------------------------------------------
-# Define simulation dimensions
-# ------------------------------------------------------------
-
-# number of nodes (states in the network)
-p <- length(states)
-
-# number of time-varying edges (number of simulated events)
-n <- 1000
-
-# ------------------------------------------------------------
-# Load exogenous distance information
-# ------------------------------------------------------------
-
-# load distance matrix (see 02-exogenous-information/dist_matrix_script) 
-# and its true non-linear effect
-source("02-exogenous-information/true_non_linear_effect.R")
-
-# Plot of the true spline-based nonlinear effect
-coefficients_plot
-
-### Linear effect of weekday
-b0 = 1.5
-
-### Linear effect of reciprocity
-b1 = 0.5
-
-# ------------------------------------------------------------
-# Event Simulation Function
-# ------------------------------------------------------------
-
 event_simulator <- function(states, p, n, b0, b1, fit, seed) {
   
+  # Set seed for reproducibility
   set.seed(seed)
   print(seed)
   
-  # some constants
+  # ----------------------------------------------------------
+  # Initialize simulation objects
+  # ----------------------------------------------------------
+  
+  # Continuous time variable
   current.tm<-0
+  
+  # Reciprocity matrix (counts reverse interactions r -> s)
   rec<-matrix(0,ncol=p,nrow=p)
   
-  #where to save
+  # Containers to store event and non-event observations
   dat<-NULL
   nondat<-NULL
   tms<-NULL
-  tm = 0  # Initialize time to 0
   
-  # Initialize the invaded list with a random sample of states
+  # Initialize time variable (unused but kept for clarity)
+  tm = 0  
+  
+  # ----------------------------------------------------------
+  # Initialize last-contacted state tracking
+  # ----------------------------------------------------------
+  
+  # Matrix storing most recent contacted state for each node
   last_contacted <- matrix(NA, nrow=n+1, ncol=p)
+  
+  # Random initial last-contacted assignment
   last_contacted[1,] <- sample(states, p)
+  
+  # Assign state names as column names
   colnames(last_contacted) <- states
   
-  # Compute the distance matrix for each state and potential state pairs
+  # ----------------------------------------------------------
+  # Compute initial distance-based nonlinear effect
+  # ----------------------------------------------------------
+  
+  # Distance between each state and its last contacted state
   dist.m <- t(sapply(states, function(st) 
     sapply(states, function(pot.st)
       dist_matrix[pot.st, last_contacted[1,st]])))
+  
+  # Apply spline-based nonlinear transformation
   distance <- matrix(spline_function(as.vector(dist.m),
                                      fit), 
                      nrow=p, ncol=p)
   
-  #simulation of events
+  # ----------------------------------------------------------
+  # Simulation loop
+  # ----------------------------------------------------------
+  
   i<-1
   while (i <=n){
     
+    # Print progress every 100 iterations
     if(i%%100==0) print(i)
-    current.weekday<-1*(current.tm%%7>=2)
-    hazard<- exp(b0*current.weekday+b1*rec+distance)/(p^2)
-    #no self-loops
-    # diag(hazard)<-0
     
-    # time increase
+    # Indicator for weekday (1) vs weekend (0)
+    current.weekday<-1*(current.tm%%7>=2)
+    
+    # Hazard includes:
+    # - weekday effect (b0)
+    # - reciprocity effect (b1)
+    # - nonlinear distance effect
+    hazard<- exp(b0*current.weekday+b1*rec+distance)/(p^2)
+    
+    # Draw waiting time from exponential distribution
     dt<-rexp(1,sum(hazard))
     
-    # check if this change meant that the event 
-    # moved from weekend to weekday or vice-versa:
+    # Check whether time jump crosses weekday/weekend boundary
     new.weekday<-1*((current.tm+dt)%%7>=2)
-    if (dt>5| new.weekday!=current.weekday){
+    
+    # If jump is too large or crosses boundary,
+    # move time directly to boundary without recording event
+    
+    if (dt>5 | new.weekday!=current.weekday){
+      
+      # Jump to next weekday/weekend boundary
       current.tm<- (current.tm%/%7)*7+2+current.weekday*5
+      
     } else {
+      
+      # Update time normally
       current.tm<-current.tm+dt
+      
+      # Store event time
       tms<-c(tms,current.tm)
+      
+      # Sample event proportional to hazard
       event.id<-sample(1:p^2, 1,prob = hazard/sum(hazard))
+      
+      # Convert index to sender (s) and receiver (r)
       s<-(event.id-1)%%p+1
       r<-(event.id-1)%/%p+1
+      
+      # Store event data
       dat<-rbind(dat,c(current.tm,s,r,event.id,
                        current.weekday,
                        dist.m[s,r],
                        rec[s,r]))
       
+      # ------------------------------------------------------
+      # Sample one non-event pair for case-control
+      # ------------------------------------------------------
+      
       non.event.id <- sample(setdiff(1:p^2, event.id),1)
+      
       non.s <- (non.event.id-1)%%p+1
       non.r <- (non.event.id-1)%/%p+1
+      
+      # Store non-event information
       nondat <- rbind(nondat,c(non.s,non.r,non.event.id,
                                dist.m[non.s,non.r],
                                rec[non.s,non.r]))
       
+      # ------------------------------------------------------
+      # Update system after event
+      # ------------------------------------------------------
+      
+      # Update reciprocity in reverse direction
       rec[r,s] <- rec[r,s] + 1
+      
+      # Carry forward last-contacted history
       last_contacted[i+1,] <- last_contacted[i,]
+      
+      # Update sender's last contacted state
       last_contacted[i+1,states[s]] <- states[r]
       
+      # Recompute distance matrix after update
       dist.m <- t(sapply(states, function(st) 
         sapply(states, function(pot.st)
           dist_matrix[pot.st, last_contacted[i+1,st]])))
+      
+      # Recompute nonlinear distance effect
       distance <- matrix(spline_function(as.vector(dist.m),
                                          fit), 
                          nrow=p, ncol=p)
-      hazard<- exp(b0*current.weekday+b1*rec+distance)/(p^2)
-      # diag(hazard)<-0
       
+      # Recompute hazard with updated values
+      hazard<- exp(b0*current.weekday+b1*rec+distance)/(p^2)
+      
+      # Move to next event
       i<-i+1
     }
   }
   
+  # ----------------------------------------------------------
+  # Construct final case-control dataset
+  # ----------------------------------------------------------
+  
   remdat <- cbind(1:n, dat, nondat,
-                  dat[,6]-nondat[,4],
-                  dat[,7]-nondat[,5],
+                  dat[,6]-nondat[,4],   # delta distance
+                  dat[,7]-nondat[,5],   # delta reciprocity
                   1)
+  
+  # Assign column names
   colnames(remdat) <- c("index", "tms","s","r","event.id",
                         "weekday","distance", "rec",
                         "non.s","non.r","non.event.id",
                         "non.distance", "non.rec",
                         "delta.dist", "delta.rec","one")
+  
   remdat <- as.data.frame(remdat)
   
+  # Return:
+  # 1) Simulated case-control dataset
+  # 2) Last-contacted history
   return(list(remdat, last_contacted))
 }
