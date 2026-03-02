@@ -117,7 +117,9 @@ event_log <- standardize_event_log(
   time_col = "ts",
   drop_loops = TRUE
 )
+```
 
+``` r
 # 2. Exogenous covariates
 covs <- simulate_actor_covariates(
   senders = unique(event_log$sender),
@@ -131,20 +133,49 @@ event_log <- attach_static_covariates(
   sender_covariates = covs$sender_covariates,
   receiver_covariates = covs$receiver_covariates
 )
+```
 
+``` r
 # 3. Endogenous stats from the evolving event net
 event_log <- compute_endogenous_features(event_log,
   stats = c("sender_outdegree", "receiver_indegree", "reciprocity", "recency")
 )
+```
 
-``sender_outdegree`` and ``receiver_indegree`` count, respectively, how many
-events the sender has issued and the receiver has received prior to the current
-time \(t_i\). Reciprocity is
-\(\mathbb{1}[\exists\ j < i : (s_j, r_j) = (r_i, s_i)]\), i.e., whether the
-reverse dyad ever appeared in the past. Recency reports the elapsed time since
-the last event on the same ordered pair, \(t_i - \max\{ t_j : j < i, (s_j, r_j) =
-(s_i, r_i) \}\), or `NA` if the dyad is new.
+### Exogenous covariate definitions
 
+[`simulate_actor_covariates()`](https://franciscorichter.github.io/amore/reference/simulate_actor_covariates.md)
+returns two lookup tables with one row per actor. For a sender (a) and
+covariate name (k):
+
+- **Static covariates** (default) are draws
+  $$x_{a,k} \sim \mathcal{N}\left( 0,\sigma^{2} \right),$$ and
+  [`attach_static_covariates()`](https://franciscorichter.github.io/amore/reference/attach_static_covariates.md)
+  stores them in the event log as `sender_<k>` or `receiver_<k>`. In the
+  example, `activity` acts as a baseline propensity for sending events
+  and `popularity` captures receiver-specific attractiveness.
+- **Dynamic covariates** arise when `time_points` is provided. Values
+  satisfy
+  $$x_{a,k}\left( t_{\ell} \right) = \rho\, x_{a,k}\left( t_{\ell - 1} \right) + \varepsilon_{a,k}\left( t_{\ell} \right),\qquad\varepsilon_{a,k}\left( t_{\ell} \right) \sim \mathcal{N}\left( 0,\sigma^{2} \right),$$
+  yielding independent AR(1) trajectories for each actor/covariate pair.
+
+### Endogenous network statistics
+
+All endogenous summaries are evaluated immediately **before** the (i)-th
+event ((s_i, r_i, t_i)) is added to the log:
+
+- **Sender outdegree**
+  $$\text{outdeg}_{s_{i}}\left( t_{i}^{-} \right) = \sum\limits_{j < i}\mathbf{1}\left\lbrack s_{j} = s_{i} \right\rbrack.$$
+- **Receiver indegree**
+  $$\text{indeg}_{r_{i}}\left( t_{i}^{-} \right) = \sum\limits_{j < i}\mathbf{1}\left\lbrack r_{j} = r_{i} \right\rbrack.$$
+- **Reciprocity indicator**
+  $$\text{recip}_{(s_{i},r_{i})}\left( t_{i}^{-} \right) = \mathbf{1}\lbrack\exists\ j < i:\left( s_{j},r_{j} \right) = \left( r_{i},s_{i} \right)\rbrack.$$
+- **Recency**
+  $$\text{recency}_{(s_{i},r_{i})}\left( t_{i}^{-} \right) = t_{i} - \max\{ t_{j}:j < i,\left( s_{j},r_{j} \right) = \left( s_{i},r_{i} \right)\},$$
+  with the convention that the value is `NA` when the dyad has not
+  appeared before.
+
+``` r
 # 4. Inference-ready case-control data
 cases_controls <- simulate_relational_events(
   n_events = 100,

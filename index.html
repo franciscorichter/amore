@@ -130,64 +130,88 @@
 <strong>Inference data</strong> — nested case-control tables returned by <code>simulate_relational_events(..., n_controls &gt; 0)</code> to drive conditional logistic / GAM estimation.</li>
 </ol>
 <p>A small preprocessing example:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(amore)</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co"># 1. Event log direct from a data source</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>raw_events <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">source =</span> <span class="fu">c</span>(<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>),</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">target =</span> <span class="fu">c</span>(<span class="st">"b"</span>, <span class="st">"c"</span>, <span class="st">"a"</span>, <span class="st">"a"</span>),</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">ts =</span> <span class="fu">c</span>(<span class="fl">2.1</span>, <span class="fl">2.4</span>, <span class="fl">3.0</span>, <span class="fl">3.5</span>)</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>)</span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>event_log <span class="ot">&lt;-</span> <span class="fu">standardize_event_log</span>(</span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  raw_events,</span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">sender_col =</span> <span class="st">"source"</span>,</span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="at">receiver_col =</span> <span class="st">"target"</span>,</span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  <span class="at">time_col =</span> <span class="st">"ts"</span>,</span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  <span class="at">drop_loops =</span> <span class="cn">TRUE</span></span>
-<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>)</span>
-<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a></span>
-<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co"># 2. Exogenous covariates</span></span>
-<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>covs <span class="ot">&lt;-</span> <span class="fu">simulate_actor_covariates</span>(</span>
-<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  <span class="at">senders =</span> <span class="fu">unique</span>(event_log<span class="sc">$</span>sender),</span>
-<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>  <span class="at">receivers =</span> <span class="fu">unique</span>(event_log<span class="sc">$</span>receiver),</span>
-<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>  <span class="at">covariate_names =</span> <span class="fu">c</span>(<span class="st">"activity"</span>, <span class="st">"popularity"</span>),</span>
-<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
-<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>)</span>
-<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a></span>
-<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>event_log <span class="ot">&lt;-</span> <span class="fu">attach_static_covariates</span>(</span>
-<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a>  event_log,</span>
-<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a>  <span class="at">sender_covariates =</span> covs<span class="sc">$</span>sender_covariates,</span>
-<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>  <span class="at">receiver_covariates =</span> covs<span class="sc">$</span>receiver_covariates</span>
-<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a>)</span>
-<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a></span>
-<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co"># 3. Endogenous stats from the evolving event net</span></span>
-<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a>event_log <span class="ot">&lt;-</span> <span class="fu">compute_endogenous_features</span>(event_log,</span>
-<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a>  <span class="at">stats =</span> <span class="fu">c</span>(<span class="st">"sender_outdegree"</span>, <span class="st">"receiver_indegree"</span>, <span class="st">"reciprocity"</span>, <span class="st">"recency"</span>)</span>
-<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a>)</span>
-<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a></span>
-<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="st">``</span>sender_outdegree<span class="st">``</span> and <span class="st">``</span>receiver_indegree<span class="st">``</span> count, respectively, how many</span>
-<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a>events the sender has issued and the receiver has received prior to the current</span>
-<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a>time \(t_i\). Reciprocity is</span>
-<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a>\(\mathbb{<span class="dv">1</span>}[\exists\ j <span class="sc">&lt;</span> i <span class="sc">:</span> (s_j, r_j) <span class="ot">=</span> (r_i, s_i)]\), i.e., whether the</span>
-<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a>reverse dyad ever appeared <span class="cf">in</span> the past. Recency reports the elapsed time since</span>
-<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a>the last event on the same ordered pair, \(t_i <span class="sc">-</span> \max\{ t_j <span class="sc">:</span> j <span class="sc">&lt;</span> i, (s_j, r_j) <span class="ot">=</span></span>
-<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a>(s_i, r_i) \}\), or <span class="st">`</span><span class="at">NA</span><span class="st">`</span> <span class="cf">if</span> the dyad is new.</span>
-<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a></span>
-<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co"># 4. Inference-ready case-control data</span></span>
-<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a>cases_controls <span class="ot">&lt;-</span> <span class="fu">simulate_relational_events</span>(</span>
-<span id="cb4-47"><a href="#cb4-47" tabindex="-1"></a>  <span class="at">n_events =</span> <span class="dv">100</span>,</span>
-<span id="cb4-48"><a href="#cb4-48" tabindex="-1"></a>  <span class="at">senders =</span> <span class="fu">unique</span>(event_log<span class="sc">$</span>sender),</span>
-<span id="cb4-49"><a href="#cb4-49" tabindex="-1"></a>  <span class="at">receivers =</span> <span class="fu">unique</span>(event_log<span class="sc">$</span>receiver),</span>
-<span id="cb4-50"><a href="#cb4-50" tabindex="-1"></a>  <span class="at">baseline_logits =</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">3</span>),</span>
-<span id="cb4-51"><a href="#cb4-51" tabindex="-1"></a>  <span class="at">allow_loops =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb4-52"><a href="#cb4-52" tabindex="-1"></a>  <span class="at">n_controls =</span> <span class="dv">1</span></span>
-<span id="cb4-53"><a href="#cb4-53" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://franciscorichter.github.io/amore/">amore</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 1. Event log direct from a data source</span></span>
+<span><span class="va">raw_events</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"b"</span>, <span class="st">"c"</span><span class="op">)</span>,</span>
+<span>  target <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"b"</span>, <span class="st">"c"</span>, <span class="st">"a"</span>, <span class="st">"a"</span><span class="op">)</span>,</span>
+<span>  ts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.1</span>, <span class="fl">2.4</span>, <span class="fl">3.0</span>, <span class="fl">3.5</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">event_log</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/standardize_event_log.html">standardize_event_log</a></span><span class="op">(</span></span>
+<span>  <span class="va">raw_events</span>,</span>
+<span>  sender_col <span class="op">=</span> <span class="st">"source"</span>,</span>
+<span>  receiver_col <span class="op">=</span> <span class="st">"target"</span>,</span>
+<span>  time_col <span class="op">=</span> <span class="st">"ts"</span>,</span>
+<span>  drop_loops <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 2. Exogenous covariates</span></span>
+<span><span class="va">covs</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_actor_covariates.html">simulate_actor_covariates</a></span><span class="op">(</span></span>
+<span>  senders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">event_log</span><span class="op">$</span><span class="va">sender</span><span class="op">)</span>,</span>
+<span>  receivers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">event_log</span><span class="op">$</span><span class="va">receiver</span><span class="op">)</span>,</span>
+<span>  covariate_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"activity"</span>, <span class="st">"popularity"</span><span class="op">)</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">123</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">event_log</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_static_covariates.html">attach_static_covariates</a></span><span class="op">(</span></span>
+<span>  <span class="va">event_log</span>,</span>
+<span>  sender_covariates <span class="op">=</span> <span class="va">covs</span><span class="op">$</span><span class="va">sender_covariates</span>,</span>
+<span>  receiver_covariates <span class="op">=</span> <span class="va">covs</span><span class="op">$</span><span class="va">receiver_covariates</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 3. Endogenous stats from the evolving event net</span></span>
+<span><span class="va">event_log</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/compute_endogenous_features.html">compute_endogenous_features</a></span><span class="op">(</span><span class="va">event_log</span>,</span>
+<span>  stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sender_outdegree"</span>, <span class="st">"receiver_indegree"</span>, <span class="st">"reciprocity"</span>, <span class="st">"recency"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="exogenous-covariate-definitions">Exogenous covariate definitions<a class="anchor" aria-label="anchor" href="#exogenous-covariate-definitions"></a>
+</h3>
+<p><code><a href="reference/simulate_actor_covariates.html">simulate_actor_covariates()</a></code> returns two lookup tables with one row per actor. For a sender (a) and covariate name (k):</p>
+<ul>
+<li>
+<strong>Static covariates</strong> (default) are draws <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mrow><mi>a</mi><mo>,</mo><mi>k</mi></mrow></msub><mo>∼</mo><mi>𝒩</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">x_{a,k} \sim \mathcal{N}(0, \sigma^2),</annotation></semantics></math> and <code><a href="reference/attach_static_covariates.html">attach_static_covariates()</a></code> stores them in the event log as <code>sender_&lt;k&gt;</code> or <code>receiver_&lt;k&gt;</code>. In the example, <code>activity</code> acts as a baseline propensity for sending events and <code>popularity</code> captures receiver-specific attractiveness.</li>
+<li>
+<strong>Dynamic covariates</strong> arise when <code>time_points</code> is provided. Values satisfy <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mrow><mi>a</mi><mo>,</mo><mi>k</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mo>ℓ</mo></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>ρ</mi><mspace width="0.167em"></mspace><msub><mi>x</mi><mrow><mi>a</mi><mo>,</mo><mi>k</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mrow><mo>ℓ</mo><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>ε</mi><mrow><mi>a</mi><mo>,</mo><mi>k</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mo>ℓ</mo></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ε</mi><mrow><mi>a</mi><mo>,</mo><mi>k</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mo>ℓ</mo></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∼</mo><mi>𝒩</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">x_{a,k}(t_\ell) = \rho\, x_{a,k}(t_{\ell-1}) + \varepsilon_{a,k}(t_\ell), \qquad
+\varepsilon_{a,k}(t_\ell) \sim \mathcal{N}(0, \sigma^2),</annotation></semantics></math> yielding independent AR(1) trajectories for each actor/covariate pair.</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="endogenous-network-statistics">Endogenous network statistics<a class="anchor" aria-label="anchor" href="#endogenous-network-statistics"></a>
+</h3>
+<p>All endogenous summaries are evaluated immediately <strong>before</strong> the (i)-th event ((s_i, r_i, t_i)) is added to the log:</p>
+<ul>
+<li>
+<strong>Sender outdegree</strong> <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">outdeg</mtext><msub><mi>s</mi><mi>i</mi></msub></msub><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>t</mi><mi>i</mi><mo>−</mo></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munder><mo>∑</mo><mrow><mi>j</mi><mo>&lt;</mo><mi>i</mi></mrow></munder><mn>𝟏</mn><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>s</mi><mi>j</mi></msub><mo>=</mo><msub><mi>s</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">\text{outdeg}_{s_i}(t_i^-) = \sum_{j &lt; i} \mathbf{1}[s_j = s_i].</annotation></semantics></math>
+</li>
+<li>
+<strong>Receiver indegree</strong> <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">indeg</mtext><msub><mi>r</mi><mi>i</mi></msub></msub><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>t</mi><mi>i</mi><mo>−</mo></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munder><mo>∑</mo><mrow><mi>j</mi><mo>&lt;</mo><mi>i</mi></mrow></munder><mn>𝟏</mn><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>r</mi><mi>j</mi></msub><mo>=</mo><msub><mi>r</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">\text{indeg}_{r_i}(t_i^-) = \sum_{j &lt; i} \mathbf{1}[r_j = r_i].</annotation></semantics></math>
+</li>
+<li>
+<strong>Reciprocity indicator</strong> <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">recip</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mi>i</mi></msub><mo>,</mo><msub><mi>r</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>t</mi><mi>i</mi><mo>−</mo></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>𝟏</mn><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">[</mo><mo>∃</mo><mspace width="0.222em"></mspace><mi>j</mi><mo>&lt;</mo><mi>i</mi><mo>:</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mi>j</mi></msub><mo>,</mo><msub><mi>r</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>r</mi><mi>i</mi></msub><mo>,</mo><msub><mi>s</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">]</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">\text{recip}_{(s_i,r_i)}(t_i^-) = \mathbf{1}\big[\exists\ j &lt; i : (s_j, r_j) = (r_i, s_i)\big].</annotation></semantics></math>
+</li>
+<li>
+<strong>Recency</strong> <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">recency</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mi>i</mi></msub><mo>,</mo><msub><mi>r</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>t</mi><mi>i</mi><mo>−</mo></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>t</mi><mi>i</mi></msub><mo>−</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>t</mi><mi>j</mi></msub><mo>:</mo><mi>j</mi><mo>&lt;</mo><mi>i</mi><mo>,</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mi>j</mi></msub><mo>,</mo><msub><mi>r</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mi>i</mi></msub><mo>,</mo><msub><mi>r</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">}</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">\text{recency}_{(s_i,r_i)}(t_i^-) =
+t_i - \max\{ t_j : j &lt; i, (s_j, r_j) = (s_i, r_i) \},</annotation></semantics></math> with the convention that the value is <code>NA</code> when the dyad has not appeared before.</li>
+</ul>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 4. Inference-ready case-control data</span></span>
+<span><span class="va">cases_controls</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_relational_events.html">simulate_relational_events</a></span><span class="op">(</span></span>
+<span>  n_events <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  senders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">event_log</span><span class="op">$</span><span class="va">sender</span><span class="op">)</span>,</span>
+<span>  receivers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">event_log</span><span class="op">$</span><span class="va">receiver</span><span class="op">)</span>,</span>
+<span>  baseline_logits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fl">0</span>, nrow <span class="op">=</span> <span class="fl">3</span>, ncol <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
+<span>  allow_loops <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  n_controls <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
 <div class="section level3">
 <h3 id="inference-with-gam">Inference with GAM<a class="anchor" aria-label="anchor" href="#inference-with-gam"></a>
 </h3>
 <p>The case-control output lets you recover parameters via a GAM:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">mgcv</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">get_x</span>  <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">s</span>, <span class="va">r</span><span class="op">)</span> <span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span>
@@ -208,7 +232,7 @@
 <h3 id="exogenous-dyadic-covariates">Exogenous dyadic covariates<a class="anchor" aria-label="anchor" href="#exogenous-dyadic-covariates"></a>
 </h3>
 <p>The package ships a 56 × 56 US state distance matrix and supports non-linear effects via <code>baseline_logits</code>. For example, using geographic distance with a smooth true effect:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"dist_matrix"</span>, package <span class="op">=</span> <span class="st">"amore"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dist_log</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dist_matrix</span> <span class="op">/</span> <span class="fl">100000</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span></span>
@@ -235,7 +259,7 @@
 </li>
 </ul>
 <p>For function usage:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="op">?</span><span class="va">simulate_relational_events</span></span>
 <span><span class="op">?</span><span class="va">simulate_actor_covariates</span></span></code></pre></div>
 </div>
@@ -245,7 +269,7 @@
 <ul>
 <li>
 <p>During development, work from the package root and let R load the in-tree code with:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">load_all</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </li>
 <li><p>Document + namespace: <code>devtools::document()</code></p></li>
