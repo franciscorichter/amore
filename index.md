@@ -141,32 +141,28 @@ event_log <- compute_endogenous_features(event_log,
 returns two lookup tables with one row per actor. For a sender (a) and
 covariate name (k):
 
-- **Static covariates** (default) are draws
-  $$x_{a,k} \sim \mathcal{N}\left( 0,\sigma^{2} \right),$$ and
+- **Static covariates** (default) are Gaussian draws (x\_{a,k} (0, ^2)).
   [`attach_static_covariates()`](https://franciscorichter.github.io/amore/reference/attach_static_covariates.md)
   stores them in the event log as `sender_<k>` or `receiver_<k>`. In the
   example, `activity` acts as a baseline propensity for sending events
   and `popularity` captures receiver-specific attractiveness.
-- **Dynamic covariates** arise when `time_points` is provided. Values
-  satisfy
-  $$x_{a,k}\left( t_{\ell} \right) = \rho\, x_{a,k}\left( t_{\ell - 1} \right) + \varepsilon_{a,k}\left( t_{\ell} \right),\qquad\varepsilon_{a,k}\left( t_{\ell} \right) \sim \mathcal{N}\left( 0,\sigma^{2} \right),$$
-  yielding independent AR(1) trajectories for each actor/covariate pair.
+- **Dynamic covariates** arise when `time_points` is provided. \[
+  x\_{a,k}(t\_) = , x\_{a,k}(t\_{}) + *{a,k}(t*), *{a,k}(t*) (0, ^2). \]
+  Each actor/covariate pair follows an independent AR(1) trajectory at
+  the supplied time grid.
 
 ### Endogenous network statistics
 
 All endogenous summaries are evaluated immediately **before** the (i)-th
 event ((s_i, r_i, t_i)) is added to the log:
 
-- **Sender outdegree**
-  $$\text{outdeg}_{s_{i}}\left( t_{i}^{-} \right) = \sum\limits_{j < i}\mathbf{1}\left\lbrack s_{j} = s_{i} \right\rbrack.$$
-- **Receiver indegree**
-  $$\text{indeg}_{r_{i}}\left( t_{i}^{-} \right) = \sum\limits_{j < i}\mathbf{1}\left\lbrack r_{j} = r_{i} \right\rbrack.$$
-- **Reciprocity indicator**
-  $$\text{recip}_{(s_{i},r_{i})}\left( t_{i}^{-} \right) = \mathbf{1}\lbrack\exists\ j < i:\left( s_{j},r_{j} \right) = \left( r_{i},s_{i} \right)\rbrack.$$
-- **Recency**
-  $$\text{recency}_{(s_{i},r_{i})}\left( t_{i}^{-} \right) = t_{i} - \max\{ t_{j}:j < i,\left( s_{j},r_{j} \right) = \left( s_{i},r_{i} \right)\},$$
-  with the convention that the value is `NA` when the dyad has not
-  appeared before.
+- **Sender outdegree:** (*{s_i}(t_i^-) =* {j \< i} \[s_j = s_i\]).
+- **Receiver indegree:** (*{r_i}(t_i^-) =* {j \< i} \[r_j = r_i\]).
+- **Reciprocity indicator:** (\_{(s_i,r_i)}(t_i^-) = \[ j \< i : (s_j,
+  r_j) = (r_i, s_i)\]).
+- **Recency:** (\_{(s_i,r_i)}(t_i^-) = t_i - { t_j : j \< i, (s_j, r_j)
+  = (s_i, r_i) }) with the convention that the value is `NA` when the
+  dyad has not appeared before.
 
 ``` r
 # 4. Inference-ready case-control data
