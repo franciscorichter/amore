@@ -29,3 +29,19 @@ Given a standardized relational event log, this helper derives simple
 historical statistics for each event. These summaries can be fed into model
 formulas or exported as part of inference-ready design matrices.
 }
+\details{
+The available statistics are defined for an event occurring at time
+\eqn{t_i} from sender \eqn{s_i} to receiver \eqn{r_i} as follows (before
+the event is logged):
+\describe{
+\item{\code{sender_outdegree}}{\eqn{\text{outdeg}_{s_i}(t_i^-)}, the number of
+events sent by \eqn{s_i} prior to \eqn{t_i}.}
+\item{\code{receiver_indegree}}{\eqn{\text{indeg}_{r_i}(t_i^-)}, the number of
+events received by \eqn{r_i} prior to \eqn{t_i}.}
+\item{\code{reciprocity}}{Indicator that the reverse dyad has ever been
+observed: \eqn{\mathbb{1}[\exists\ j < i : (s_j, r_j) = (r_i, s_i)]}.}
+\item{\code{recency}}{If the dyad has previously interacted, the elapsed time
+since the most recent event: \eqn{t_i - \max\{ t_j : j < i, (s_j,r_j) =
+      (s_i, r_i) \}}; otherwise \code{NA}.}
+}
+}
