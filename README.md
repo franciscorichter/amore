@@ -176,6 +176,55 @@ cases_controls <- simulate_relational_events(
 )
 ```
 
+### Sampling non-events from observed logs
+
+To create case-control tables from empirical event data, use
+`sample_non_events()` to append synthetic controls to each realized event:
+
+```r
+case_control_df <- sample_non_events(
+  event_log,
+  n_controls = 2,
+  scope = "appearance",
+  mode = "two",
+  allow_loops = FALSE,
+  seed = 2026
+)
+
+head(case_control_df[, c("sender", "receiver", "event", "stratum")])
+```
+
+The helper keeps the original events (`event = 1`) and appends `n_controls`
+counterfactual dyads (`event = 0`) per stratum so conditional logistic / GAM
+estimators can compare realized vs. sampled alternatives. Candidate dyads are
+constructed via two knobs:
+
+1. **scope**
+   - `"all"`: every actor ever seen in the data belongs to the sampling pool.
+   - `"appearance"`: only actors that have appeared prior to the focal event are
+     eligible, which mimics nested case-control sampling.
+2. **mode**
+   - `"one"`: draw both sender and receiver from the same candidate set (useful
+     for single-mode networks).
+   - `"two"`: draw senders and receivers from separate candidate pools (default
+     for bipartite or directed settings).
+
+Set `allow_loops = TRUE` when self-ties should be considered and adjust
+`max_attempts` to control resampling when many candidate pairs coincide with the
+observed event.
+
+Mathematically, for each observed event \((s_i, r_i, t_i)\) the function draws
+control dyads \((s_{i	heta}, r_{i	heta})_{\theta=1}^{n_{\text{controls}}}\)
+according to the chosen scope/mode, ensuring they are distinct from the realized
+pair. The output stacks
+\[
+  \{(s_i, r_i, t_i, \text{event}=1)\} \cup
+  \bigcup_{\theta=1}^{n_{\text{controls}}}
+  \{(s_{i\theta}, r_{i\theta}, t_i, \text{event}=0)\}
+\]
+into stratum \(i\) so likelihood contributions compare true events against their
+matched controls.
+
 ### Inference with GAM
 
 The case-control output lets you recover parameters via a GAM:
