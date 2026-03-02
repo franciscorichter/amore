@@ -2,3 +2,7 @@
 
 export(simulate_actor_covariates)
 export(simulate_relational_events)
+export(standardize_event_log)
+export(attach_static_covariates)
+export(compute_endogenous_features)
+export(sample_non_events)
