@@ -7,4 +7,5 @@
 .RData
 .Rproj.user/
 .DS_Store
+.vscode/
 Rplots.pdf

@@ -10,3 +10,4 @@
 ^index\.md$
 ^amore\.Rcheck$
 ^pkgdown$
+^\.vscode$
