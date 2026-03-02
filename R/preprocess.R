@@ -317,10 +317,16 @@ compute_endogenous_features <- function(
 #'   event.
 #' @param scope Candidate set definition. `"all"` uses every actor observed in
 #'   the data; `"appearance"` restricts to actors that have appeared in prior
-#'   events.
+#'   events; `"citation"` matches citation networks where senders are restricted
+#'   to the papers that debut at the current time and receivers must have
+#'   appeared earlier.
 #' @param mode `"one"` draws both sender and receiver from the same candidate
 #'   pool (single-mode). `"two"` samples sender and receiver from separate pools
 #'   (two-mode).
+#' @param risk Strategy governing the risk set. `"standard"` (default) keeps all
+#'   unrealized dyads available across strata, whereas `"remove"` deletes a dyad
+#'   from the candidate pool after it has occurred (useful for processes such as
+#'   species invasions where a pair cannot reoccur).
 #' @param allow_loops Logical; can sampled non-events have identical sender and
 #'   receiver?
 #' @param seed Optional seed for reproducibility.
@@ -333,8 +339,9 @@ compute_endogenous_features <- function(
 sample_non_events <- function(
     event_log,
     n_controls = 1,
-    scope = c("all", "appearance"),
+    scope = c("all", "appearance", "citation"),
     mode = c("two", "one"),
+    risk = c("standard", "remove"),
     allow_loops = FALSE,
     seed = NULL,
     max_attempts = 1000) {
@@ -354,6 +361,7 @@ sample_non_events <- function(
 
   scope <- match.arg(scope)
   mode <- match.arg(mode)
+  risk <- match.arg(risk)
 
   if (!is.null(seed)) {
     old_seed <- get0(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -378,36 +386,78 @@ sample_non_events <- function(
   receiver_all <- unique(as.character(event_log$receiver))
   combined_all <- sort(unique(c(sender_all, receiver_all)))
 
+  sender_first_time <- tapply(event_log$time, event_log$sender, min)
+
+  get_citation_senders <- function(time_val) {
+    if (!length(sender_first_time)) {
+      return(character(0))
+    }
+    tol <- if (is.finite(time_val)) sqrt(.Machine$double.eps) else 0
+    matches <- abs(sender_first_time - time_val) < tol
+    names(sender_first_time)[matches]
+  }
+
+  get_citation_receivers <- function(time_val) {
+    if (!length(sender_first_time)) {
+      return(character(0))
+    }
+    names(sender_first_time)[sender_first_time < time_val]
+  }
+
   appearance_senders <- character(0)
   appearance_receivers <- character(0)
   appearance_combined <- character(0)
 
-  get_candidates <- function(use_scope) {
+  get_candidates <- function(use_scope, time_val, current_sender, current_receiver) {
     if (use_scope == "all") {
-      list(
+      return(list(
         senders = sender_all,
         receivers = receiver_all,
         combined = combined_all
-      )
-    } else {
-      list(
-        senders = appearance_senders,
-        receivers = appearance_receivers,
-        combined = appearance_combined
-      )
+      ))
     }
+
+    if (use_scope == "appearance") {
+      senders <- if (length(appearance_senders)) appearance_senders else sender_all
+      receivers <- if (length(appearance_receivers)) appearance_receivers else receiver_all
+      combined <- if (length(appearance_combined)) appearance_combined else combined_all
+      return(list(senders = senders, receivers = receivers, combined = combined))
+    }
+
+    senders <- get_citation_senders(time_val)
+    if (!length(senders)) {
+      senders <- character(0)
+    }
+    if (!current_sender %in% senders) {
+      senders <- unique(c(senders, current_sender))
+    }
+
+    receivers <- get_citation_receivers(time_val)
+    if (!length(receivers)) {
+      receivers <- character(0)
+    }
+    if (!current_receiver %in% receivers) {
+      receivers <- unique(c(receivers, current_receiver))
+    }
+
+    combined <- unique(c(senders, receivers))
+    list(senders = senders, receivers = receivers, combined = combined)
   }
+
+  dyad_key <- function(s, r) paste0(s, "->", r)
+
+  removed_dyads <- new.env(parent = emptyenv())
 
   choose_pair <- function(cands, mode_choice) {
     if (mode_choice == "one") {
       needed <- if (allow_loops) 1L else 2L
-      if (length(cands$combined) < needed) {
+      if (length(cands$combined) < needed && scope != "citation") {
         cands$combined <- combined_all
       }
       pair <- sample(cands$combined, size = 2, replace = allow_loops)
       list(sender = pair[1], receiver = pair[2])
     } else {
-      if (!length(cands$senders) || !length(cands$receivers)) {
+      if ((!length(cands$senders) || !length(cands$receivers)) && scope != "citation") {
         cands$senders <- sender_all
         cands$receivers <- receiver_all
       }
@@ -415,6 +465,59 @@ sample_non_events <- function(
       r <- sample(cands$receivers, size = 1)
       list(sender = s, receiver = r)
     }
+  }
+
+  has_viable_pair <- function(cands, mode_choice, current_sender, current_receiver) {
+    check_pair <- function(s, r) {
+      if (!allow_loops && identical(s, r)) {
+        return(FALSE)
+      }
+      if (is.na(s) || is.na(r)) {
+        return(FALSE)
+      }
+      if (identical(s, current_sender) && identical(r, current_receiver)) {
+        return(FALSE)
+      }
+      if (risk == "remove" && !is.null(removed_dyads[[dyad_key(s, r)]])) {
+        return(FALSE)
+      }
+      TRUE
+    }
+
+    if (mode_choice == "one") {
+      combos <- cands$combined
+      if (!length(combos)) {
+        return(FALSE)
+      }
+      if (allow_loops) {
+        for (s in combos) {
+          for (r in combos) {
+            if (check_pair(s, r)) return(TRUE)
+          }
+        }
+        return(FALSE)
+      }
+      if (length(combos) < 2) {
+        return(FALSE)
+      }
+      for (i in seq_along(combos)) {
+        for (j in seq_along(combos)) {
+          if (i == j) next
+          if (check_pair(combos[i], combos[j])) return(TRUE)
+        }
+      }
+      return(FALSE)
+    }
+
+    if (!length(cands$senders) || !length(cands$receivers)) {
+      return(FALSE)
+    }
+    for (s in cands$senders) {
+      for (r in cands$receivers) {
+        if (check_pair(s, r)) return(TRUE)
+      }
+    }
+    FALSE
   }
 
   extra_cols <- setdiff(names(event_log), required_cols)
@@ -442,38 +545,50 @@ sample_non_events <- function(
   ctrl_index <- 0L
 
   for (i in seq_len(n_events)) {
-    current_scope <- if (scope == "appearance" && i > 1) "appearance" else scope
-    cand_sets <- get_candidates(current_scope)
+    cand_sets <- get_candidates(scope, events_df$time[i], events_df$sender[i], events_df$receiver[i])
+    viable <- has_viable_pair(cand_sets, mode, events_df$sender[i], events_df$receiver[i])
 
-    for (j in seq_len(n_controls)) {
-      attempts <- 0L
-      repeat {
-        attempts <- attempts + 1L
-        if (attempts > max_attempts) {
-          stop("Unable to sample a valid non-event after ", max_attempts, " attempts.")
+    if (viable) {
+      for (j in seq_len(n_controls)) {
+        attempts <- 0L
+        repeat {
+          attempts <- attempts + 1L
+          if (attempts > max_attempts) {
+            stop("Unable to sample a valid non-event after ", max_attempts, " attempts.")
+          }
+
+          sampled <- choose_pair(cand_sets, mode)
+          if (!allow_loops && sampled$sender == sampled$receiver) {
+            next
+          }
+          if (sampled$sender == events_df$sender[i] && sampled$receiver == events_df$receiver[i]) {
+            next
+          }
+          if (risk == "remove") {
+            key <- dyad_key(sampled$sender, sampled$receiver)
+            if (!is.null(removed_dyads[[key]])) {
+              next
+            }
+          }
+          break
         }
 
-        sampled <- choose_pair(cand_sets, mode)
-        if (!allow_loops && sampled$sender == sampled$receiver) {
-          next
-        }
-        if (sampled$sender == events_df$sender[i] && sampled$receiver == events_df$receiver[i]) {
-          next
-        }
-        break
+        ctrl_index <- ctrl_index + 1L
+        control_df$stratum[ctrl_index] <- events_df$stratum[i]
+        control_df$event[ctrl_index] <- 0L
+        control_df$sender[ctrl_index] <- sampled$sender
+        control_df$receiver[ctrl_index] <- sampled$receiver
+        control_df$time[ctrl_index] <- events_df$time[i]
       }
-
-      ctrl_index <- ctrl_index + 1L
-      control_df$stratum[ctrl_index] <- events_df$stratum[i]
-      control_df$event[ctrl_index] <- 0L
-      control_df$sender[ctrl_index] <- sampled$sender
-      control_df$receiver[ctrl_index] <- sampled$receiver
-      control_df$time[ctrl_index] <- events_df$time[i]
     }
 
     appearance_senders <- union(appearance_senders, events_df$sender[i])
     appearance_receivers <- union(appearance_receivers, events_df$receiver[i])
     appearance_combined <- union(appearance_combined, c(events_df$sender[i], events_df$receiver[i]))
+
+    if (risk == "remove") {
+      removed_dyads[[dyad_key(events_df$sender[i], events_df$receiver[i])]] <- TRUE
+    }
   }
 
   if (ctrl_index < total_controls) {

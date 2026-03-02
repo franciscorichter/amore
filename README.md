@@ -133,36 +133,28 @@ event_log <- compute_endogenous_features(event_log,
 ### Exogenous covariate definitions
 
 `simulate_actor_covariates()` returns two lookup tables with one row per actor.
-For a sender \(a\) and covariate name \(k\):
+For a sender/receiver and a given covariate name:
 
-- **Static covariates** (default) are Gaussian draws
-  \(x_{a,k} \sim \mathcal{N}(0, \sigma^2)\). `attach_static_covariates()`
-  stores them in the event log as `sender_<k>` or `receiver_<k>`. In the example,
-  `activity` acts as a baseline propensity for sending events and `popularity`
-  captures receiver-specific attractiveness.
-- **Dynamic covariates** arise when `time_points` is provided.
-  \[
-    x_{a,k}(t_\ell) = \rho\, x_{a,k}(t_{\ell-1}) + \varepsilon_{a,k}(t_\ell),
-    \qquad \varepsilon_{a,k}(t_\ell) \sim \mathcal{N}(0, \sigma^2).
-  \]
-  Each actor/covariate pair follows an independent AR(1) trajectory at the
-  supplied time grid.
+- **Static covariates** (default) are independent Gaussian draws centered at
+  zero. `attach_static_covariates()` stores them in the event log as
+  `sender_<name>` or `receiver_<name>`. In the example, `activity` represents a
+  baseline propensity for sending events and `popularity` captures how
+  attractive an actor is as a receiver.
+- **Dynamic covariates** arise when `time_points` is supplied. Each actor and
+  covariate follows an AR(1) trajectory controlled by the `rho` and `sd`
+  arguments, so values drift smoothly through time while remaining correlated
+  from one time stamp to the next.
 
 ### Endogenous network statistics
 
-All endogenous summaries are evaluated immediately **before** the \(i\)-th event
-\((s_i, r_i, t_i)\) is added to the log:
+All endogenous summaries are evaluated immediately **before** an event is logged:
 
-- **Sender outdegree:** \(\text{outdeg}_{s_i}(t_i^-) = \sum_{j < i}
-  \mathbf{1}[s_j = s_i]\).
-- **Receiver indegree:** \(\text{indeg}_{r_i}(t_i^-) = \sum_{j < i}
-  \mathbf{1}[r_j = r_i]\).
-- **Reciprocity indicator:**
-  \(\text{recip}_{(s_i,r_i)}(t_i^-) = \mathbf{1}[\exists\ j < i : (s_j, r_j) =
-  (r_i, s_i)]\).
-- **Recency:** \(\text{recency}_{(s_i,r_i)}(t_i^-) = t_i - \max\{ t_j : j < i,
-  (s_j, r_j) = (s_i, r_i) \}\) with the convention that the value is `NA`
-  when the dyad has not appeared before.
+- **Sender outdegree:** number of events the sender has issued up to that point.
+- **Receiver indegree:** number of events the receiver has received so far.
+- **Reciprocity indicator:** whether the reverse dyad has ever been observed
+  (i.e., the prospective receiver has previously contacted the sender).
+- **Recency:** elapsed time since the last event on the same ordered pair;
+  reported as `NA` when the dyad is brand new.
 
 ```r
 # 4. Inference-ready case-control data
@@ -197,7 +189,7 @@ head(case_control_df[, c("sender", "receiver", "event", "stratum")])
 The helper keeps the original events (`event = 1`) and appends `n_controls`
 counterfactual dyads (`event = 0`) per stratum so conditional logistic / GAM
 estimators can compare realized vs. sampled alternatives. Candidate dyads are
-constructed via two knobs:
+constructed via two knobs plus an optional risk-set rule:
 
 1. **scope**
    - `"all"`: every actor ever seen in the data belongs to the sampling pool.
@@ -208,6 +200,10 @@ constructed via two knobs:
      for single-mode networks).
    - `"two"`: draw senders and receivers from separate candidate pools (default
      for bipartite or directed settings).
+3. **risk**
+   - `"standard"`: risk set never shrinks beyond the chosen scope.
+   - `"remove"`: once a realized dyad `(s_i, r_i)` occurs, it is removed from
+     consideration in later strata (e.g., species invasion that cannot repeat).
 
 Set `allow_loops = TRUE` when self-ties should be considered and adjust
 `max_attempts` to control resampling when many candidate pairs coincide with the
@@ -215,26 +211,24 @@ observed event.
 
 The three sampling schemes we discussed earlier map directly onto these knobs:
 
-| Strategy label               | `scope`        | `mode`                 |
-|-----------------------------|----------------|------------------------|
-| **all + one-mode**          | `"all"`       | `"one"`               |
-| **all + two-mode**          | `"all"`       | `"two"`               |
-| **appearance + one/two-mode** | `"appearance"` | `"one"` **or** `"two"` |
+| Strategy label                | `scope`         | `mode`                    |
+|------------------------------|-----------------|---------------------------|
+| **all + one-mode**           | `"all"`        | `"one"`                |
+| **all + two-mode**           | `"all"`        | `"two"`                |
+| **appearance + one/two-mode**| `"appearance"` | `"one"` or `"two"`    |
+| **citation**                 | `"citation"`   | typically `"two"`       |
+| **remove one/two-mode**      | `"all"` or `"appearance"` | `"one"` / `"two"`; set `risk = "remove"` |
 
 The last option is listed twice because you may want either a single-mode or a
 two-mode draw while still restricting to previously active actors.
 
-Mathematically, for each observed event \((s_i, r_i, t_i)\) the function draws
-control dyads \((s_{i	heta}, r_{i	heta})_{\theta=1}^{n_{\text{controls}}}\)
-according to the chosen scope/mode, ensuring they are distinct from the realized
-pair. The output stacks
-\[
-  \{(s_i, r_i, t_i, \text{event}=1)\} \cup
-  \bigcup_{\theta=1}^{n_{\text{controls}}}
-  \{(s_{i\theta}, r_{i\theta}, t_i, \text{event}=0)\}
-\]
-into stratum \(i\) so likelihood contributions compare true events against their
-matched controls.
+For the citation sampler, senders are the papers that debut at the event time
+while receivers must have appeared strictly earlier. The `risk = "remove"` flag
+deletes realized dyads from future candidate sets to mimic one-off events such as
+biological invasions. Regardless of the configuration, each stratum contains the
+observed event (`event = 1`) followed by its sampled controls (`event = 0`), so
+conditional likelihood estimators can contrast what happened with what could have
+happened instead.
 
 ### Inference with GAM
 

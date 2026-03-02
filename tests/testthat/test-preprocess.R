@@ -23,6 +23,57 @@ test_that("standardize_event_log cleans and tags logs", {
   expect_equal(nrow(out), 2)
 })
 
+test_that("sample_non_events supports citation scope and removal risk", {
+  events <- data.frame(
+    sender = c("p1", "p2", "p3", "p4"),
+    receiver = c("seed", "p1", "p2", "p3"),
+    time = c(1, 2, 2, 3)
+  )
+
+  citation <- sample_non_events(events,
+    n_controls = 1,
+    scope = "citation",
+    mode = "two",
+    seed = 42
+  )
+
+  controls_cite <- subset(citation, event == 0)
+  first_time <- tapply(events$time, events$sender, min)
+  tol <- sqrt(.Machine$double.eps)
+
+  for (row in seq_len(nrow(controls_cite))) {
+    stratum <- controls_cite$stratum[row]
+    t_i <- events$time[stratum]
+    eligible_senders <- names(first_time)[abs(first_time - t_i) < tol]
+    expect_true(controls_cite$sender[row] %in% eligible_senders)
+    eligible_receivers <- names(first_time)[first_time < t_i]
+    expect_true(controls_cite$receiver[row] %in% unique(c(eligible_receivers, events$receiver[stratum])))
+  }
+
+  invasion <- sample_non_events(events,
+    n_controls = 1,
+    scope = "all",
+    mode = "two",
+    risk = "remove",
+    seed = 24
+  )
+
+  controls_inv <- subset(invasion, event == 0)
+  realized <- data.frame(
+    stratum = seq_len(nrow(events)),
+    sender = events$sender,
+    receiver = events$receiver
+  )
+
+  for (row in seq_len(nrow(controls_inv))) {
+    prior <- realized[realized$stratum < controls_inv$stratum[row], ]
+    if (nrow(prior)) {
+      matches <- prior$sender == controls_inv$sender[row] & prior$receiver == controls_inv$receiver[row]
+      expect_false(any(matches))
+    }
+  }
+})
+
 
  test_that("attach_static_covariates merges sender/receiver tables", {
   events <- data.frame(
