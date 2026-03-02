@@ -70,13 +70,6 @@ events <- simulate_relational_events(
 head(events)
 ```
 
-> **Tip:** Every subsequent chunk in this README assumes the package has
-> already been loaded (via
-> [`library(amore)`](https://franciscorichter.github.io/amore/) or
-> `devtools::load_all()` from a checkout). Otherwise helpers such as
-> [`simulate_relational_events()`](https://franciscorichter.github.io/amore/reference/simulate_relational_events.md)
-> will not be found.
-
 ## Core data components
 
 Module A (Preprocesses) organizes dynamic network workflows around four
