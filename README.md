@@ -109,7 +109,9 @@ event_log <- standardize_event_log(
   time_col = "ts",
   drop_loops = TRUE
 )
+```
 
+```r
 # 2. Exogenous covariates
 covs <- simulate_actor_covariates(
   senders = unique(event_log$sender),
@@ -123,20 +125,49 @@ event_log <- attach_static_covariates(
   sender_covariates = covs$sender_covariates,
   receiver_covariates = covs$receiver_covariates
 )
+```
 
+```r
 # 3. Endogenous stats from the evolving event net
 event_log <- compute_endogenous_features(event_log,
   stats = c("sender_outdegree", "receiver_indegree", "reciprocity", "recency")
 )
+```
 
-``sender_outdegree`` and ``receiver_indegree`` count, respectively, how many
-events the sender has issued and the receiver has received prior to the current
-time \(t_i\). Reciprocity is
-\(\mathbb{1}[\exists\ j < i : (s_j, r_j) = (r_i, s_i)]\), i.e., whether the
-reverse dyad ever appeared in the past. Recency reports the elapsed time since
-the last event on the same ordered pair, \(t_i - \max\{ t_j : j < i, (s_j, r_j) =
-(s_i, r_i) \}\), or `NA` if the dyad is new.
+### Exogenous covariate definitions
 
+`simulate_actor_covariates()` returns two lookup tables with one row per actor.
+For a sender \(a\) and covariate name \(k\):
+
+- **Static covariates** (default) are draws
+  $$x_{a,k} \sim \mathcal{N}(0, \sigma^2),$$
+  and `attach_static_covariates()` stores them in the event log as
+  `sender_<k>` or `receiver_<k>`. In the example, `activity` acts as a baseline
+  propensity for sending events and `popularity` captures receiver-specific
+  attractiveness.
+- **Dynamic covariates** arise when `time_points` is provided.  Values satisfy
+  $$x_{a,k}(t_\ell) = \rho\, x_{a,k}(t_{\ell-1}) + \varepsilon_{a,k}(t_\ell), \qquad
+  \varepsilon_{a,k}(t_\ell) \sim \mathcal{N}(0, \sigma^2),$$
+  yielding independent AR(1) trajectories for each actor/covariate pair.
+
+### Endogenous network statistics
+
+All endogenous summaries are evaluated immediately **before** the \(i\)-th event
+\((s_i, r_i, t_i)\) is added to the log:
+
+- **Sender outdegree**
+  $$\text{outdeg}_{s_i}(t_i^-) = \sum_{j < i} \mathbf{1}[s_j = s_i].$$
+- **Receiver indegree**
+  $$\text{indeg}_{r_i}(t_i^-) = \sum_{j < i} \mathbf{1}[r_j = r_i].$$
+- **Reciprocity indicator**
+  $$\text{recip}_{(s_i,r_i)}(t_i^-) = \mathbf{1}\big[\exists\ j < i : (s_j, r_j) = (r_i, s_i)\big].$$
+- **Recency**
+  $$\text{recency}_{(s_i,r_i)}(t_i^-) =
+  t_i - \max\{ t_j : j < i, (s_j, r_j) = (s_i, r_i) \},$$
+  with the convention that the value is `NA` when the dyad has not appeared
+  before.
+
+```r
 # 4. Inference-ready case-control data
 cases_controls <- simulate_relational_events(
   n_events = 100,
