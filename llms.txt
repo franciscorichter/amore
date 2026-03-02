@@ -70,6 +70,13 @@ events <- simulate_relational_events(
 head(events)
 ```
 
+> **Tip:** Every subsequent chunk in this README assumes the package has
+> already been loaded (via
+> [`library(amore)`](https://franciscorichter.github.io/amore/) or
+> `devtools::load_all()` from a checkout). Otherwise helpers such as
+> [`simulate_relational_events()`](https://franciscorichter.github.io/amore/reference/simulate_relational_events.md)
+> will not be found.
+
 ## Core data components
 
 Module A (Preprocesses) organizes dynamic network workflows around four
@@ -129,6 +136,14 @@ event_log <- attach_static_covariates(
 event_log <- compute_endogenous_features(event_log,
   stats = c("sender_outdegree", "receiver_indegree", "reciprocity", "recency")
 )
+
+``sender_outdegree`` and ``receiver_indegree`` count, respectively, how many
+events the sender has issued and the receiver has received prior to the current
+time \(t_i\). Reciprocity is
+\(\mathbb{1}[\exists\ j < i : (s_j, r_j) = (r_i, s_i)]\), i.e., whether the
+reverse dyad ever appeared in the past. Recency reports the elapsed time since
+the last event on the same ordered pair, \(t_i - \max\{ t_j : j < i, (s_j, r_j) =
+(s_i, r_i) \}\), or `NA` if the dyad is new.
 
 # 4. Inference-ready case-control data
 cases_controls <- simulate_relational_events(
@@ -204,9 +219,19 @@ For function usage:
 
 ## Development
 
+- During development, work from the package root and let R load the
+  in-tree code with:
+
+  ``` r
+  devtools::load_all()
+  ```
+
 - Document + namespace: `devtools::document()`
+
 - Tests: `devtools::test()`
+
 - Full check: `devtools::check()`
+
 - Build pkgdown site:
   [`pkgdown::build_site()`](https://pkgdown.r-lib.org/reference/build_site.html)
 

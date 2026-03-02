@@ -35,3 +35,30 @@ compute_endogenous_features(
 ## Value
 
 The event log with added columns, one per requested statistic.
+
+## Details
+
+The available statistics are defined for an event occurring at time
+\\t_i\\ from sender \\s_i\\ to receiver \\r_i\\ as follows (before the
+event is logged):
+
+- `sender_outdegree`:
+
+  \\\text{outdeg}\_{s_i}(t_i^-)\\, the number of events sent by \\s_i\\
+  prior to \\t_i\\.
+
+- `receiver_indegree`:
+
+  \\\text{indeg}\_{r_i}(t_i^-)\\, the number of events received by
+  \\r_i\\ prior to \\t_i\\.
+
+- `reciprocity`:
+
+  Indicator that the reverse dyad has ever been observed:
+  \\\mathbb{1}\[\exists\\ j \< i : (s_j, r_j) = (r_i, s_i)\]\\.
+
+- `recency`:
+
+  If the dyad has previously interacted, the elapsed time since the most
+  recent event: \\t_i - \max\\ t_j : j \< i, (s_j,r_j) = (s_i, r_i)
+  \\\\; otherwise `NA`.

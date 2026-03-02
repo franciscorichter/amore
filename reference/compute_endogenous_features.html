@@ -73,6 +73,29 @@ computing summaries (ties preserve input order).</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The event log with added columns, one per requested statistic.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The available statistics are defined for an event occurring at time
+\(t_i\) from sender \(s_i\) to receiver \(r_i\) as follows (before
+the event is logged):</p><dl><dt><code>sender_outdegree</code></dt>
+<dd><p>\(\text{outdeg}_{s_i}(t_i^-)\), the number of
+events sent by \(s_i\) prior to \(t_i\).</p></dd>
+
+<dt><code>receiver_indegree</code></dt>
+<dd><p>\(\text{indeg}_{r_i}(t_i^-)\), the number of
+events received by \(r_i\) prior to \(t_i\).</p></dd>
+
+<dt><code>reciprocity</code></dt>
+<dd><p>Indicator that the reverse dyad has ever been
+observed: \(\mathbb{1}[\exists\ j &lt; i : (s_j, r_j) = (r_i, s_i)]\).</p></dd>
+
+<dt><code>recency</code></dt>
+<dd><p>If the dyad has previously interacted, the elapsed time
+since the most recent event: \(t_i - \max\{ t_j : j &lt; i, (s_j,r_j) =
+      (s_i, r_i) \}\); otherwise <code>NA</code>.</p></dd>
+
+
+</dl></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
