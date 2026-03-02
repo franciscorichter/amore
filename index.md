@@ -70,6 +70,77 @@ events <- simulate_relational_events(
 head(events)
 ```
 
+## Core data components
+
+Module A (Preprocesses) organizes dynamic network workflows around four
+objects that can be composed as needed:
+
+1.  **Relational event data** — canonical log with `sender`, `receiver`,
+    `time`, produced via simulations or ingested from data sources.
+2.  **Exogenous covariates** — actor or dyad-level inputs not generated
+    by the event process (e.g., geography, demographics). These can be
+    simulated via
+    [`simulate_actor_covariates()`](https://franciscorichter.github.io/amore/reference/simulate_actor_covariates.md)
+    or supplied as `baseline_logits`/lookup tables.
+3.  **Endogenous covariates (eventnet)** — summaries derived from the
+    evolving event history (recency, reciprocity, shared partners). Use
+    [`compute_endogenous_features()`](https://franciscorichter.github.io/amore/reference/compute_endogenous_features.md)
+    to generate baseline statistics that can be extended with custom
+    feature builders.
+4.  **Inference data** — nested case-control tables returned by
+    `simulate_relational_events(..., n_controls > 0)` to drive
+    conditional logistic / GAM estimation.
+
+A small preprocessing example:
+
+``` r
+library(amore)
+
+# 1. Event log direct from a data source
+raw_events <- data.frame(
+  source = c("a", "b", "b", "c"),
+  target = c("b", "c", "a", "a"),
+  ts = c(2.1, 2.4, 3.0, 3.5)
+)
+
+event_log <- standardize_event_log(
+  raw_events,
+  sender_col = "source",
+  receiver_col = "target",
+  time_col = "ts",
+  drop_loops = TRUE
+)
+
+# 2. Exogenous covariates
+covs <- simulate_actor_covariates(
+  senders = unique(event_log$sender),
+  receivers = unique(event_log$receiver),
+  covariate_names = c("activity", "popularity"),
+  seed = 123
+)
+
+event_log <- attach_static_covariates(
+  event_log,
+  sender_covariates = covs$sender_covariates,
+  receiver_covariates = covs$receiver_covariates
+)
+
+# 3. Endogenous stats from the evolving event net
+event_log <- compute_endogenous_features(event_log,
+  stats = c("sender_outdegree", "receiver_indegree", "reciprocity", "recency")
+)
+
+# 4. Inference-ready case-control data
+cases_controls <- simulate_relational_events(
+  n_events = 100,
+  senders = unique(event_log$sender),
+  receivers = unique(event_log$receiver),
+  baseline_logits = matrix(0, nrow = 3, ncol = 3),
+  allow_loops = FALSE,
+  n_controls = 1
+)
+```
+
 ### Inference with GAM
 
 The case-control output lets you recover parameters via a GAM:
