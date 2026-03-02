@@ -215,6 +215,19 @@ Set `allow_loops = TRUE` when self-ties should be considered and adjust
 `max_attempts` to control resampling when many candidate pairs coincide
 with the observed event.
 
+The three sampling schemes we discussed earlier map directly onto these
+knobs:
+
+| Strategy label                | `scope`        | `mode`                 |
+|-------------------------------|----------------|------------------------|
+| **all + one-mode**            | `"all"`        | `"one"`                |
+| **all + two-mode**            | `"all"`        | `"two"`                |
+| **appearance + one/two-mode** | `"appearance"` | `"one"` **or** `"two"` |
+
+The last option is listed twice because you may want either a
+single-mode or a two-mode draw while still restricting to previously
+active actors.
+
 Mathematically, for each observed event ((s_i, r_i, t_i)) the function
 draws control dyads ((s\_{i heta}, r\_{i heta})*{}^{n*{}}) according to
 the chosen scope/mode, ensuring they are distinct from the realized

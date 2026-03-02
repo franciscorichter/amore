@@ -236,6 +236,39 @@
 </li>
 </ol>
 <p>Set <code>allow_loops = TRUE</code> when self-ties should be considered and adjust <code>max_attempts</code> to control resampling when many candidate pairs coincide with the observed event.</p>
+<p>The three sampling schemes we discussed earlier map directly onto these knobs:</p>
+<table class="table">
+<colgroup>
+<col width="42%">
+<col width="23%">
+<col width="34%">
+</colgroup>
+<thead><tr class="header">
+<th>Strategy label</th>
+<th><code>scope</code></th>
+<th><code>mode</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><strong>all + one-mode</strong></td>
+<td><code>"all"</code></td>
+<td><code>"one"</code></td>
+</tr>
+<tr class="even">
+<td><strong>all + two-mode</strong></td>
+<td><code>"all"</code></td>
+<td><code>"two"</code></td>
+</tr>
+<tr class="odd">
+<td><strong>appearance + one/two-mode</strong></td>
+<td><code>"appearance"</code></td>
+<td>
+<code>"one"</code> <strong>or</strong> <code>"two"</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The last option is listed twice because you may want either a single-mode or a two-mode draw while still restricting to previously active actors.</p>
 <p>Mathematically, for each observed event ((s_i, r_i, t_i)) the function draws control dyads ((s_{i heta}, r_{i heta})<em>{}^{n</em>{}}) according to the chosen scope/mode, ensuring they are distinct from the realized pair. The output stacks [ {(s_i, r_i, t_i, =1)}  <em>{}^{n</em>{}} {(s_{i}, r_{i}, t_i, =0)} ] into stratum (i) so likelihood contributions compare true events against their matched controls.</p>
 </div>
 <div class="section level3">
