@@ -200,10 +200,49 @@
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
+<h3 id="sampling-non-events-from-observed-logs">Sampling non-events from observed logs<a class="anchor" aria-label="anchor" href="#sampling-non-events-from-observed-logs"></a>
+</h3>
+<p>To create case-control tables from empirical event data, use <code><a href="reference/sample_non_events.html">sample_non_events()</a></code> to append synthetic controls to each realized event:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">case_control_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sample_non_events.html">sample_non_events</a></span><span class="op">(</span></span>
+<span>  <span class="va">event_log</span>,</span>
+<span>  n_controls <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  scope <span class="op">=</span> <span class="st">"appearance"</span>,</span>
+<span>  mode <span class="op">=</span> <span class="st">"two"</span>,</span>
+<span>  allow_loops <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">2026</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">case_control_df</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sender"</span>, <span class="st">"receiver"</span>, <span class="st">"event"</span>, <span class="st">"stratum"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<p>The helper keeps the original events (<code>event = 1</code>) and appends <code>n_controls</code> counterfactual dyads (<code>event = 0</code>) per stratum so conditional logistic / GAM estimators can compare realized vs. sampled alternatives. Candidate dyads are constructed via two knobs:</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>scope</strong>
+<ul>
+<li>
+<code>"all"</code>: every actor ever seen in the data belongs to the sampling pool.</li>
+<li>
+<code>"appearance"</code>: only actors that have appeared prior to the focal event are eligible, which mimics nested case-control sampling.</li>
+</ul>
+</li>
+<li>
+<strong>mode</strong>
+<ul>
+<li>
+<code>"one"</code>: draw both sender and receiver from the same candidate set (useful for single-mode networks).</li>
+<li>
+<code>"two"</code>: draw senders and receivers from separate candidate pools (default for bipartite or directed settings).</li>
+</ul>
+</li>
+</ol>
+<p>Set <code>allow_loops = TRUE</code> when self-ties should be considered and adjust <code>max_attempts</code> to control resampling when many candidate pairs coincide with the observed event.</p>
+<p>Mathematically, for each observed event ((s_i, r_i, t_i)) the function draws control dyads ((s_{i heta}, r_{i heta})<em>{}^{n</em>{}}) according to the chosen scope/mode, ensuring they are distinct from the realized pair. The output stacks [ {(s_i, r_i, t_i, =1)}  <em>{}^{n</em>{}} {(s_{i}, r_{i}, t_i, =0)} ] into stratum (i) so likelihood contributions compare true events against their matched controls.</p>
+</div>
+<div class="section level3">
 <h3 id="inference-with-gam">Inference with GAM<a class="anchor" aria-label="anchor" href="#inference-with-gam"></a>
 </h3>
 <p>The case-control output lets you recover parameters via a GAM:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">mgcv</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">get_x</span>  <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">s</span>, <span class="va">r</span><span class="op">)</span> <span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span>
@@ -224,7 +263,7 @@
 <h3 id="exogenous-dyadic-covariates">Exogenous dyadic covariates<a class="anchor" aria-label="anchor" href="#exogenous-dyadic-covariates"></a>
 </h3>
 <p>The package ships a 56 × 56 US state distance matrix and supports non-linear effects via <code>baseline_logits</code>. For example, using geographic distance with a smooth true effect:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"dist_matrix"</span>, package <span class="op">=</span> <span class="st">"amore"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dist_log</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dist_matrix</span> <span class="op">/</span> <span class="fl">100000</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span></span>
@@ -251,7 +290,7 @@
 </li>
 </ul>
 <p>For function usage:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="op">?</span><span class="va">simulate_relational_events</span></span>
 <span><span class="op">?</span><span class="va">simulate_actor_covariates</span></span></code></pre></div>
 </div>
@@ -261,7 +300,7 @@
 <ul>
 <li>
 <p>During development, work from the package root and let R load the in-tree code with:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">load_all</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </li>
 <li><p>Document + namespace: <code>devtools::document()</code></p></li>
