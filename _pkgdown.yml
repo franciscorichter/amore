@@ -13,6 +13,7 @@ navbar:
   components:
     github:
       icon: fab fa-github
+      aria-label: "GitHub repository"
       href: https://github.com/franciscorichter/amore
     reference:
       text: Reference
@@ -26,6 +27,12 @@ reference:
     contents:
       - simulate_relational_events
       - simulate_actor_covariates
+  - title: "Preprocess module"
+    contents:
+      - standardize_event_log
+      - attach_static_covariates
+      - compute_endogenous_features
+      - sample_non_events
   - title: "Data"
     contents:
       - dist_matrix
