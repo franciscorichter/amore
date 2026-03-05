@@ -7,8 +7,9 @@
 sample_non_events(
   event_log,
   n_controls = 1,
-  scope = c("all", "appearance"),
+  scope = c("all", "appearance", "citation"),
   mode = c("two", "one"),
+  risk = c("standard", "remove"),
   allow_loops = FALSE,
   seed = NULL,
   max_attempts = 1000
@@ -22,11 +23,18 @@ event.}
 
 \item{scope}{Candidate set definition. \code{"all"} uses every actor observed in
 the data; \code{"appearance"} restricts to actors that have appeared in prior
-events.}
+events; \code{"citation"} matches citation networks where senders are restricted
+to the papers that debut at the current time and receivers must have
+appeared earlier.}
 
 \item{mode}{\code{"one"} draws both sender and receiver from the same candidate
 pool (single-mode). \code{"two"} samples sender and receiver from separate pools
 (two-mode).}
+
+\item{risk}{Strategy governing the risk set. \code{"standard"} (default) keeps all
+unrealized dyads available across strata, whereas \code{"remove"} deletes a dyad
+from the candidate pool after it has occurred (useful for processes such as
+species invasions where a pair cannot reoccur).}
 
 \item{allow_loops}{Logical; can sampled non-events have identical sender and
 receiver?}

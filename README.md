@@ -21,6 +21,27 @@
 - **Inference** tools for fitting REMs and working with likelihood-based / counting-process formulations.
 - **Covariate engineering** helpers for both exogenous and endogenous statistics (e.g., reciprocity, recency, shared partners), in a consistent API.
 
+## Current capabilities
+
+The package already supports the end-to-end workflow needed for exploratory and
+simulation-based REM studies:
+
+- **Data intake and cleaning.** `standardize_event_log()` harmonizes raw logs,
+  drops loops/duplicates, and tags them as `amore_event_log` objects.
+- **Exogenous actor covariates.** `simulate_actor_covariates()` generates static
+  or AR(1) dynamic traits, while `attach_static_covariates()` merges user data.
+- **Endogenous covariates.** `compute_endogenous_features()` now implements 28
+  endogenous effects (recency, multiple reciprocity forms, transitivity,
+  cyclic closure, sending/receiving balance) following Juozaitienė & Wit (2025).
+- **Relational event simulation.** `simulate_relational_events()` runs
+  Gillespie-style simulations with optional controls for partial likelihood.
+- **Non-event sampling.** `sample_non_events()` constructs nested case-control
+  tables with appearance, citation, and remove risk-set rules.
+- **Inference-ready design matrices.** Simulations or sampled logs can be fed to
+  conditional logistic models or GAMs, as illustrated later in the README.
+- **Documentation + tests.** pkgdown reference site, vignettes, and an expanded
+  unit-test suite (79 tests) keep the above pieces stable.
+
 ## Installation
 
 ```r
@@ -147,14 +168,75 @@ For a sender/receiver and a given covariate name:
 
 ### Endogenous network statistics
 
-All endogenous summaries are evaluated immediately **before** an event is logged:
+All endogenous summaries are evaluated immediately **before** an event is
+logged.  They follow the taxonomy of
+[Juozaitienė & Wit (2025, JRSS-A)](https://doi.org/10.1093/jrsssa/qnae132)
+and use the *continuous* convention (effects persist even after a closure
+event).  Pass one or more stat names to `compute_endogenous_features()`.
 
-- **Sender outdegree:** number of events the sender has issued up to that point.
-- **Receiver indegree:** number of events the receiver has received so far.
-- **Reciprocity indicator:** whether the reverse dyad has ever been observed
-  (i.e., the prospective receiver has previously contacted the sender).
-- **Recency:** elapsed time since the last event on the same ordered pair;
-  reported as `NA` when the dyad is brand new.
+**Degree / baseline**
+
+| Stat name | Description |
+|-----------|-------------|
+| `sender_outdegree` | Number of events the sender has issued so far. |
+| `receiver_indegree` | Number of events the receiver has received so far. |
+| `recency` | Elapsed time since the last event on the same ordered pair; `NA` when the dyad is brand new. |
+
+**Reciprocity** — history of the reverse dyad (receiver → sender)
+
+| Stat name | Description |
+|-----------|-------------|
+| `reciprocity` / `reciprocity_binary` | 1 if the reverse dyad has ever been observed, 0 otherwise. |
+| `reciprocity_count` | Total number of past reverse-dyad events. |
+| `reciprocity_exp_decay` | Exponentially weighted sum of past reverse-dyad events; older events contribute less according to `half_life`. |
+| `reciprocity_time_recent` | Elapsed time since the most recent reverse-dyad event; `NA` if none. |
+| `reciprocity_time_first` | Elapsed time since the first reverse-dyad event; `NA` if none. |
+
+**Transitivity** — two-path s → k → r (the sender previously contacted
+some intermediary k who in turn contacted the receiver)
+
+| Stat name | Description |
+|-----------|-------------|
+| `transitivity_binary` | 1 if any such intermediary k exists, 0 otherwise. |
+| `transitivity_count` | Number of distinct intermediaries. |
+| `transitivity_binary_ordered` | Like binary, but requiring the s → k event to precede the k → r event in time. |
+| `transitivity_count_ordered` | Count with order restriction. |
+| `transitivity_exp_decay` | Exp-decay weighted sum over two-paths (requires `half_life`). |
+| `transitivity_exp_decay_ordered` | Exp-decay with order restriction. |
+| `transitivity_time_recent` | Time since the most recently completed two-path; `NA` if none. |
+| `transitivity_time_first` | Time since the earliest two-path; `NA` if none. |
+| `transitivity_time_recent_ordered` | Time since the most recent ordered two-path; `NA` if none. |
+| `transitivity_time_first_ordered` | Time since the earliest ordered two-path; `NA` if none. |
+
+**Cyclic closure** — two-path r → k → s, closed by event s → r (the
+receiver previously contacted k, and k previously contacted the sender)
+
+| Stat name | Description |
+|-----------|-------------|
+| `cyclic_binary` | 1 if any cyclic two-path exists, 0 otherwise. |
+| `cyclic_count` | Number of cyclic intermediaries. |
+| `cyclic_time_recent` | Time since the most recent cyclic two-path; `NA` if none. |
+
+**Sending balance** — shared target: both s → k and r → k exist (the
+sender and receiver have both contacted the same third actor k)
+
+| Stat name | Description |
+|-----------|-------------|
+| `sending_balance_binary` | 1 if any shared target exists, 0 otherwise. |
+| `sending_balance_count` | Number of shared targets. |
+| `sending_balance_time_recent` | Time since the most recent shared-target two-path; `NA` if none. |
+
+**Receiving balance** — shared source: both k → s and k → r exist (the
+sender and receiver have both been contacted by the same third actor k)
+
+| Stat name | Description |
+|-----------|-------------|
+| `receiving_balance_binary` | 1 if any shared source exists, 0 otherwise. |
+| `receiving_balance_count` | Number of shared sources. |
+| `receiving_balance_time_recent` | Time since the most recent shared-source two-path; `NA` if none. |
+
+All `*_exp_decay` statistics require a `half_life` argument that controls
+how quickly the influence of past events diminishes.
 
 ```r
 # 4. Inference-ready case-control data

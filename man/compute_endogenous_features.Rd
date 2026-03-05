@@ -7,6 +7,7 @@
 compute_endogenous_features(
   event_log,
   stats = c("sender_outdegree", "receiver_indegree", "reciprocity", "recency"),
+  half_life = NULL,
   sort = TRUE
 )
 }
@@ -14,9 +15,11 @@ compute_endogenous_features(
 \item{event_log}{A data.frame containing at least \code{sender}, \code{receiver}, and
 \code{time} columns.}
 
-\item{stats}{Character vector describing which statistics to compute. Allowed
-values are \code{"sender_outdegree"}, \code{"receiver_indegree"}, \code{"reciprocity"}, and
-\code{"recency"}.}
+\item{stats}{Character vector of statistics to compute.  See \strong{Details} for
+the full list of allowed values.}
+
+\item{half_life}{Positive numeric; the half-life parameter \eqn{T} for
+exponential-decay statistics (\verb{*_exp_decay*}).}
 
 \item{sort}{Logical; when \code{TRUE}, events are ordered by time prior to
 computing summaries (ties preserve input order).}
@@ -25,23 +28,86 @@ computing summaries (ties preserve input order).}
 The event log with added columns, one per requested statistic.
 }
 \description{
-Given a standardized relational event log, this helper derives simple
-historical statistics for each event. These summaries can be fed into model
-formulas or exported as part of inference-ready design matrices.
+Given a standardized relational event log, this helper derives historical
+statistics for each event based on the evolving network.  The statistics
+follow the taxonomy of Juozaitienė and Wit (2025, JRSS-A) and cover
+reciprocity, transitivity, cyclic closure, sending balance and receiving
+balance.  All definitions use the \emph{continuous} convention (effects persist
+even after a closure event).
 }
 \details{
-The available statistics are defined for an event occurring at time
-\eqn{t_i} from sender \eqn{s_i} to receiver \eqn{r_i} as follows (before
-the event is logged):
+All statistics are evaluated immediately \strong{before} the event is
+logged.  They are grouped into five families.
+
+\strong{Degree / baseline:}
 \describe{
-\item{\code{sender_outdegree}}{\eqn{\text{outdeg}_{s_i}(t_i^-)}, the number of
-events sent by \eqn{s_i} prior to \eqn{t_i}.}
-\item{\code{receiver_indegree}}{\eqn{\text{indeg}_{r_i}(t_i^-)}, the number of
-events received by \eqn{r_i} prior to \eqn{t_i}.}
-\item{\code{reciprocity}}{Indicator that the reverse dyad has ever been
-observed: \eqn{\mathbb{1}[\exists\ j < i : (s_j, r_j) = (r_i, s_i)]}.}
-\item{\code{recency}}{If the dyad has previously interacted, the elapsed time
-since the most recent event: \eqn{t_i - \max\{ t_j : j < i, (s_j,r_j) =
-      (s_i, r_i) \}}; otherwise \code{NA}.}
+\item{\code{sender_outdegree}}{Number of events previously sent by the
+sender.}
+\item{\code{receiver_indegree}}{Number of events previously received by the
+receiver.}
+\item{\code{recency}}{Elapsed time since the last event on the same ordered
+pair; \code{NA} when the dyad is brand new.}
+}
+
+\strong{Reciprocity} — reverse-dyad (receiver \eqn{\to} sender) history:
+\describe{
+\item{\code{reciprocity} / \code{reciprocity_binary}}{1 if the reverse dyad has
+ever been observed, 0 otherwise.}
+\item{\code{reciprocity_count}}{Total count of past reverse-dyad events.}
+\item{\code{reciprocity_exp_decay}}{Exponentially weighted sum of past
+reverse-dyad events (requires \code{half_life}).}
+\item{\code{reciprocity_time_recent}}{Elapsed time since the most recent
+reverse-dyad event; \code{NA} if none.}
+\item{\code{reciprocity_time_first}}{Elapsed time since the first
+reverse-dyad event; \code{NA} if none.}
+}
+
+\strong{Transitivity} — two-path \eqn{s \to k \to r}:
+\describe{
+\item{\code{transitivity_binary}}{1 if any intermediary \eqn{k} exists with
+both \eqn{(s,k)} and \eqn{(k,r)} before \eqn{t}.}
+\item{\code{transitivity_count}}{Number of such intermediaries.}
+\item{\code{transitivity_binary_ordered}}{Like binary but requiring
+\eqn{(s,k)} to precede \eqn{(k,r)}.}
+\item{\code{transitivity_count_ordered}}{Count with order restriction.}
+\item{\code{transitivity_exp_decay}}{Exp-decay weighted sum over two-paths
+(requires \code{half_life}).}
+\item{\code{transitivity_exp_decay_ordered}}{Exp-decay with order
+restriction.}
+\item{\code{transitivity_time_recent}}{Time since the most recently completed
+two-path; \code{NA} if none.}
+\item{\code{transitivity_time_first}}{Time since the earliest two-path; \code{NA}
+if none.}
+\item{\code{transitivity_time_recent_ordered}}{Time since the most recent
+ordered two-path; \code{NA} if none.}
+\item{\code{transitivity_time_first_ordered}}{Time since the earliest ordered
+two-path; \code{NA} if none.}
+}
+
+\strong{Cyclic closure} — two-path \eqn{r \to k \to s}, closed by
+\eqn{s \to r}:
+\describe{
+\item{\code{cyclic_binary}}{1 if any cyclic two-path exists.}
+\item{\code{cyclic_count}}{Number of cyclic intermediaries.}
+\item{\code{cyclic_time_recent}}{Time since the most recent cyclic two-path;
+\code{NA} if none.}
+}
+
+\strong{Sending balance} — shared target: both \eqn{s \to k} and \eqn{r \to k}
+exist:
+\describe{
+\item{\code{sending_balance_binary}}{1 if any shared target exists.}
+\item{\code{sending_balance_count}}{Number of shared targets.}
+\item{\code{sending_balance_time_recent}}{Time since the most recent
+shared-target two-path; \code{NA} if none.}
+}
+
+\strong{Receiving balance} — shared source: both \eqn{k \to s} and
+\eqn{k \to r} exist:
+\describe{
+\item{\code{receiving_balance_binary}}{1 if any shared source exists.}
+\item{\code{receiving_balance_count}}{Number of shared sources.}
+\item{\code{receiving_balance_time_recent}}{Time since the most recent
+shared-source two-path; \code{NA} if none.}
 }
 }

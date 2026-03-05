@@ -125,6 +125,239 @@ test_that("compute_endogenous_features derives requested statistics", {
   expect_true(is.na(feats$recency[3]))
 })
 
+test_that("reciprocity variants are computed correctly", {
+  events <- data.frame(
+    sender   = c("a", "b", "a", "b"),
+    receiver = c("b", "a", "b", "a"),
+    time     = c(1,   3,   5,   8)
+  )
+
+  feats <- compute_endogenous_features(events,
+    stats = c("reciprocity", "reciprocity_binary", "reciprocity_count",
+              "reciprocity_time_recent", "reciprocity_time_first")
+  )
+
+  # Event 1: a->b at t=1.  No prior b->a.
+
+  expect_equal(feats$reciprocity[1], 0L)
+  expect_equal(feats$reciprocity_binary[1], 0L)
+  expect_equal(feats$reciprocity_count[1], 0)
+  expect_true(is.na(feats$reciprocity_time_recent[1]))
+  expect_true(is.na(feats$reciprocity_time_first[1]))
+
+  # Event 2: b->a at t=3.  Prior a->b at t=1.
+  expect_equal(feats$reciprocity[2], 1L)
+  expect_equal(feats$reciprocity_count[2], 1)
+  expect_equal(feats$reciprocity_time_recent[2], 2)
+  expect_equal(feats$reciprocity_time_first[2], 2)
+
+  # Event 3: a->b at t=5.  Prior b->a at t=3.
+  expect_equal(feats$reciprocity[3], 1L)
+  expect_equal(feats$reciprocity_count[3], 1)
+  expect_equal(feats$reciprocity_time_recent[3], 2)
+  expect_equal(feats$reciprocity_time_first[3], 2)
+
+  # Event 4: b->a at t=8.  Prior a->b at t=1 and t=5.
+  expect_equal(feats$reciprocity_count[4], 2)
+  expect_equal(feats$reciprocity_time_recent[4], 3)   # 8 - 5
+  expect_equal(feats$reciprocity_time_first[4], 7)    # 8 - 1
+})
+
+test_that("reciprocity_exp_decay uses half_life correctly", {
+  events <- data.frame(
+    sender   = c("a", "a", "b"),
+    receiver = c("b", "b", "a"),
+    time     = c(0,   1,   3)
+  )
+
+  hl <- 2
+  feats <- compute_endogenous_features(events,
+    stats = "reciprocity_exp_decay", half_life = hl
+  )
+
+  # Event 3: b->a at t=3.  Two prior a->b events at t=0 and t=1.
+  # exp(-(3-0)*ln2/2) + exp(-(3-1)*ln2/2)
+  expected <- exp(-3 * log(2) / 2) + exp(-2 * log(2) / 2)
+  expect_equal(feats$reciprocity_exp_decay[3], expected, tolerance = 1e-10)
+})
+
+test_that("transitivity stats are computed correctly", {
+  # a->b at t=1, b->c at t=2  =>  two-path a->b->c exists for event a->c
+  # a->c at t=4 should see transitivity via intermediary b
+  events <- data.frame(
+    sender   = c("a", "b", "a"),
+    receiver = c("b", "c", "c"),
+    time     = c(1,   2,   4)
+  )
+
+  feats <- compute_endogenous_features(events,
+    stats = c("transitivity_binary", "transitivity_count",
+              "transitivity_binary_ordered", "transitivity_count_ordered",
+              "transitivity_time_recent", "transitivity_time_first",
+              "transitivity_time_recent_ordered", "transitivity_time_first_ordered")
+  )
+
+  # Events 1 & 2 have no two-paths yet
+  expect_equal(feats$transitivity_binary[1], 0L)
+  expect_equal(feats$transitivity_binary[2], 0L)
+
+  # Event 3: a->c at t=4.  Two-path a->b->c via b.
+  # Unordered completion = max(t(a->b)=1, t(b->c)=2) = 2
+  expect_equal(feats$transitivity_binary[3], 1L)
+  expect_equal(feats$transitivity_count[3], 1)
+  expect_equal(feats$transitivity_time_recent[3], 2)  # 4 - 2
+  expect_equal(feats$transitivity_time_first[3], 2)   # same, only one k
+
+  # Ordered: a->b at t=1 before b->c at t=2: valid
+  expect_equal(feats$transitivity_binary_ordered[3], 1L)
+  expect_equal(feats$transitivity_count_ordered[3], 1)
+  expect_equal(feats$transitivity_time_recent_ordered[3], 2) # 4 - 2
+})
+
+test_that("transitivity ordered vs unordered differ when order is reversed", {
+  # b->c at t=1, a->b at t=2 => two-path a->b->c exists (unordered)
+  # but order restriction fails: a->b (t=2) is NOT before b->c (t=1)
+  events <- data.frame(
+    sender   = c("b", "a", "a"),
+    receiver = c("c", "b", "c"),
+    time     = c(1,   2,   4)
+  )
+
+  feats <- compute_endogenous_features(events,
+    stats = c("transitivity_binary", "transitivity_binary_ordered",
+              "transitivity_time_recent", "transitivity_time_recent_ordered")
+  )
+
+  # Event 3: a->c.  Intermediary b: a->b(t=2), b->c(t=1)
+  # Unordered: exists (both happened before t=4)
+  expect_equal(feats$transitivity_binary[3], 1L)
+  expect_equal(feats$transitivity_time_recent[3], 2) # 4 - max(2,1) = 2
+
+  # Ordered: need a->b before b->c.  a->b at t=2, b->c at t=1.
+  # No b->c event after min(a->b times)=2 => invalid
+  expect_equal(feats$transitivity_binary_ordered[3], 0L)
+  expect_true(is.na(feats$transitivity_time_recent_ordered[3]))
+})
+
+test_that("cyclic closure stats are computed correctly", {
+  # Cyclic two-path for event s->r: need r->k and k->s
+  # r->k at t=1, k->s at t=2  =>  cyclic two-path exists for s->r
+  events <- data.frame(
+    sender   = c("b", "k", "a"),
+    receiver = c("k", "a", "b"),
+    time     = c(1,   2,   4)
+  )
+
+  feats <- compute_endogenous_features(events,
+    stats = c("cyclic_binary", "cyclic_count", "cyclic_time_recent")
+  )
+
+  # Event 3: a->b at t=4.  Cyclic: need b->k and k->a.
+  # b->k at t=1, k->a at t=2.  Intermediary k exists.
+  expect_equal(feats$cyclic_binary[3], 1L)
+  expect_equal(feats$cyclic_count[3], 1)
+  expect_equal(feats$cyclic_time_recent[3], 2)  # 4 - max(1, 2) = 2
+
+  # Earlier events have no cyclic two-paths
+  expect_equal(feats$cyclic_binary[1], 0L)
+  expect_equal(feats$cyclic_binary[2], 0L)
+})
+
+test_that("sending balance stats are computed correctly", {
+  # Sending balance for s->r: need s->k and r->k (shared target)
+  events <- data.frame(
+    sender   = c("a", "b", "a"),
+    receiver = c("k", "k", "b"),
+    time     = c(1,   2,   5)
+  )
+
+  feats <- compute_endogenous_features(events,
+    stats = c("sending_balance_binary", "sending_balance_count",
+              "sending_balance_time_recent")
+  )
+
+  # Event 3: a->b at t=5.  Shared target k: a->k(t=1), b->k(t=2).
+  expect_equal(feats$sending_balance_binary[3], 1L)
+  expect_equal(feats$sending_balance_count[3], 1)
+  expect_equal(feats$sending_balance_time_recent[3], 3)  # 5 - max(1,2) = 3
+
+  expect_equal(feats$sending_balance_binary[1], 0L)
+})
+
+test_that("receiving balance stats are computed correctly", {
+  # Receiving balance for s->r: need k->s and k->r (shared source)
+  events <- data.frame(
+    sender   = c("k", "k", "a"),
+    receiver = c("a", "b", "b"),
+    time     = c(1,   3,   5)
+  )
+
+  feats <- compute_endogenous_features(events,
+    stats = c("receiving_balance_binary", "receiving_balance_count",
+              "receiving_balance_time_recent")
+  )
+
+  # Event 3: a->b at t=5.  Shared source k: k->a(t=1), k->b(t=3).
+  expect_equal(feats$receiving_balance_binary[3], 1L)
+  expect_equal(feats$receiving_balance_count[3], 1)
+  expect_equal(feats$receiving_balance_time_recent[3], 2)  # 5 - max(1,3) = 2
+
+  expect_equal(feats$receiving_balance_binary[1], 0L)
+})
+
+test_that("transitivity_exp_decay uses half_life correctly", {
+  events <- data.frame(
+    sender   = c("a", "b", "a"),
+    receiver = c("b", "c", "c"),
+    time     = c(0,   1,   5)
+  )
+
+  hl <- 3
+  feats <- compute_endogenous_features(events,
+    stats = c("transitivity_exp_decay", "transitivity_exp_decay_ordered"),
+    half_life = hl
+  )
+
+  # Event 3: a->c at t=5.  Two-path via b: completion = max(0, 1) = 1.
+  # exp(-(5-1)*ln2/3)
+  expected <- exp(-4 * log(2) / 3)
+  expect_equal(feats$transitivity_exp_decay[3], expected, tolerance = 1e-10)
+  expect_equal(feats$transitivity_exp_decay_ordered[3], expected, tolerance = 1e-10)
+})
+
+test_that("multiple intermediaries are counted correctly", {
+  # Two intermediaries for a->c: via b and via d
+  events <- data.frame(
+    sender   = c("a", "b", "a", "d", "a"),
+    receiver = c("b", "c", "d", "c", "c"),
+    time     = c(1,   2,   3,   4,   6)
+  )
+
+  feats <- compute_endogenous_features(events,
+    stats = c("transitivity_count", "transitivity_time_recent",
+              "transitivity_time_first")
+  )
+
+  # Event 5: a->c at t=6.
+  # Via b: a->b(1), b->c(2), completion = max(1,2) = 2
+  # Via d: a->d(3), d->c(4), completion = max(3,4) = 4
+  expect_equal(feats$transitivity_count[5], 2)
+  expect_equal(feats$transitivity_time_recent[5], 2)  # 6 - max(2,4) = 6-4 = 2
+  expect_equal(feats$transitivity_time_first[5], 4)   # 6 - min(2,4) = 6-2 = 4
+})
+
+test_that("exp_decay stats require half_life", {
+  events <- data.frame(sender = "a", receiver = "b", time = 1)
+  expect_error(
+    compute_endogenous_features(events, stats = "reciprocity_exp_decay"),
+    "half_life"
+  )
+  expect_error(
+    compute_endogenous_features(events, stats = "transitivity_exp_decay"),
+    "half_life"
+  )
+})
+
 test_that("sample_non_events supports scope/mode combinations", {
   events <- data.frame(
     sender = c("a", "b", "c", "a"),

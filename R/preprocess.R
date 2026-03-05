@@ -182,54 +182,144 @@ attach_static_covariates <- function(
 
 #' Compute endogenous event-network statistics
 #'
-#' Given a standardized relational event log, this helper derives simple
-#' historical statistics for each event. These summaries can be fed into model
-#' formulas or exported as part of inference-ready design matrices.
+#' Given a standardized relational event log, this helper derives historical
+#' statistics for each event based on the evolving network.  The statistics
+#' follow the taxonomy of Juozaitienė and Wit (2025, JRSS-A) and cover
+#' reciprocity, transitivity, cyclic closure, sending balance and receiving
+#' balance.  All definitions use the *continuous* convention (effects persist
+#' even after a closure event).
 #'
 #' @param event_log A data.frame containing at least `sender`, `receiver`, and
 #'   `time` columns.
-#' @param stats Character vector describing which statistics to compute. Allowed
-#'   values are `"sender_outdegree"`, `"receiver_indegree"`, `"reciprocity"`, and
-#'   `"recency"`.
+#' @param stats Character vector of statistics to compute.  See **Details** for
+#'   the full list of allowed values.
+#' @param half_life Positive numeric; the half-life parameter \eqn{T} for
+#'   exponential-decay statistics (`*_exp_decay*`).
 #' @param sort Logical; when `TRUE`, events are ordered by time prior to
 #'   computing summaries (ties preserve input order).
-#' @details The available statistics are defined for an event occurring at time
-#'   \eqn{t_i} from sender \eqn{s_i} to receiver \eqn{r_i} as follows (before
-#'   the event is logged):
+#'
+#' @details All statistics are evaluated immediately **before** the event is
+#'   logged.  They are grouped into five families.
+#'
+#'   **Degree / baseline:**
 #'   \describe{
-#'     \item{`sender_outdegree`}{\eqn{\text{outdeg}_{s_i}(t_i^-)}, the number of
-#'       events sent by \eqn{s_i} prior to \eqn{t_i}.}
-#'     \item{`receiver_indegree`}{\eqn{\text{indeg}_{r_i}(t_i^-)}, the number of
-#'       events received by \eqn{r_i} prior to \eqn{t_i}.}
-#'     \item{`reciprocity`}{Indicator that the reverse dyad has ever been
-#'       observed: \eqn{\mathbb{1}[\exists\ j < i : (s_j, r_j) = (r_i, s_i)]}.}
-#'     \item{`recency`}{If the dyad has previously interacted, the elapsed time
-#'       since the most recent event: \eqn{t_i - \max\{ t_j : j < i, (s_j,r_j) =
-#'       (s_i, r_i) \}}; otherwise `NA`.}
+#'     \item{`sender_outdegree`}{Number of events previously sent by the
+#'       sender.}
+#'     \item{`receiver_indegree`}{Number of events previously received by the
+#'       receiver.}
+#'     \item{`recency`}{Elapsed time since the last event on the same ordered
+#'       pair; `NA` when the dyad is brand new.}
 #'   }
+#'
+#'   **Reciprocity** — reverse-dyad (receiver \eqn{\to} sender) history:
+#'   \describe{
+#'     \item{`reciprocity` / `reciprocity_binary`}{1 if the reverse dyad has
+#'       ever been observed, 0 otherwise.}
+#'     \item{`reciprocity_count`}{Total count of past reverse-dyad events.}
+#'     \item{`reciprocity_exp_decay`}{Exponentially weighted sum of past
+#'       reverse-dyad events (requires `half_life`).}
+#'     \item{`reciprocity_time_recent`}{Elapsed time since the most recent
+#'       reverse-dyad event; `NA` if none.}
+#'     \item{`reciprocity_time_first`}{Elapsed time since the first
+#'       reverse-dyad event; `NA` if none.}
+#'   }
+#'
+#'   **Transitivity** — two-path \eqn{s \to k \to r}:
+#'   \describe{
+#'     \item{`transitivity_binary`}{1 if any intermediary \eqn{k} exists with
+#'       both \eqn{(s,k)} and \eqn{(k,r)} before \eqn{t}.}
+#'     \item{`transitivity_count`}{Number of such intermediaries.}
+#'     \item{`transitivity_binary_ordered`}{Like binary but requiring
+#'       \eqn{(s,k)} to precede \eqn{(k,r)}.}
+#'     \item{`transitivity_count_ordered`}{Count with order restriction.}
+#'     \item{`transitivity_exp_decay`}{Exp-decay weighted sum over two-paths
+#'       (requires `half_life`).}
+#'     \item{`transitivity_exp_decay_ordered`}{Exp-decay with order
+#'       restriction.}
+#'     \item{`transitivity_time_recent`}{Time since the most recently completed
+#'       two-path; `NA` if none.}
+#'     \item{`transitivity_time_first`}{Time since the earliest two-path; `NA`
+#'       if none.}
+#'     \item{`transitivity_time_recent_ordered`}{Time since the most recent
+#'       ordered two-path; `NA` if none.}
+#'     \item{`transitivity_time_first_ordered`}{Time since the earliest ordered
+#'       two-path; `NA` if none.}
+#'   }
+#'
+#'   **Cyclic closure** — two-path \eqn{r \to k \to s}, closed by
+#'   \eqn{s \to r}:
+#'   \describe{
+#'     \item{`cyclic_binary`}{1 if any cyclic two-path exists.}
+#'     \item{`cyclic_count`}{Number of cyclic intermediaries.}
+#'     \item{`cyclic_time_recent`}{Time since the most recent cyclic two-path;
+#'       `NA` if none.}
+#'   }
+#'
+#'   **Sending balance** — shared target: both \eqn{s \to k} and \eqn{r \to k}
+#'   exist:
+#'   \describe{
+#'     \item{`sending_balance_binary`}{1 if any shared target exists.}
+#'     \item{`sending_balance_count`}{Number of shared targets.}
+#'     \item{`sending_balance_time_recent`}{Time since the most recent
+#'       shared-target two-path; `NA` if none.}
+#'   }
+#'
+#'   **Receiving balance** — shared source: both \eqn{k \to s} and
+#'   \eqn{k \to r} exist:
+#'   \describe{
+#'     \item{`receiving_balance_binary`}{1 if any shared source exists.}
+#'     \item{`receiving_balance_count`}{Number of shared sources.}
+#'     \item{`receiving_balance_time_recent`}{Time since the most recent
+#'       shared-source two-path; `NA` if none.}
+#'   }
+#'
 #' @return The event log with added columns, one per requested statistic.
 #' @export
 compute_endogenous_features <- function(
     event_log,
     stats = c("sender_outdegree", "receiver_indegree", "reciprocity", "recency"),
+    half_life = NULL,
     sort = TRUE) {
+
   if (!is.data.frame(event_log)) {
     stop("`event_log` must be a data.frame.")
   }
   required_cols <- c("sender", "receiver", "time")
   missing_cols <- setdiff(required_cols, names(event_log))
   if (length(missing_cols)) {
-    stop("Event log is missing required column(s): ", paste(missing_cols, collapse = ", "))
+    stop("Event log is missing required column(s): ",
+         paste(missing_cols, collapse = ", "))
   }
 
-  allowed <- c("sender_outdegree", "receiver_indegree", "reciprocity", "recency")
+  allowed <- c(
+    "sender_outdegree", "receiver_indegree", "recency",
+    "reciprocity", "reciprocity_binary", "reciprocity_count",
+    "reciprocity_exp_decay", "reciprocity_time_recent", "reciprocity_time_first",
+    "transitivity_binary", "transitivity_count",
+    "transitivity_binary_ordered", "transitivity_count_ordered",
+    "transitivity_exp_decay", "transitivity_exp_decay_ordered",
+    "transitivity_time_recent", "transitivity_time_first",
+    "transitivity_time_recent_ordered", "transitivity_time_first_ordered",
+    "cyclic_binary", "cyclic_count", "cyclic_time_recent",
+    "sending_balance_binary", "sending_balance_count",
+    "sending_balance_time_recent",
+    "receiving_balance_binary", "receiving_balance_count",
+    "receiving_balance_time_recent"
+  )
   bad <- setdiff(stats, allowed)
   if (length(bad)) {
     stop("Unsupported statistics requested: ", paste(bad, collapse = ", "))
   }
-  stats <- intersect(allowed, stats)
   if (!length(stats)) {
     stop("At least one statistic must be requested.")
+  }
+
+  exp_decay_stats <- c("reciprocity_exp_decay", "transitivity_exp_decay",
+                       "transitivity_exp_decay_ordered")
+  if (any(exp_decay_stats %in% stats) &&
+      (is.null(half_life) || !is.numeric(half_life) || half_life <= 0)) {
+    stop("`half_life` must be a positive number when ",
+         "exponential-decay statistics are requested.")
   }
 
   log_df <- event_log
@@ -240,16 +330,38 @@ compute_endogenous_features <- function(
 
   n <- nrow(log_df)
   if (!n) {
-    for (stat in stats) {
-      log_df[[stat]] <- numeric(0)
-    }
-    return(if (identical(log_df, event_log)) log_df else log_df[NULL, ])
+    for (stat in stats) log_df[[stat]] <- numeric(0)
+    return(log_df)
   }
 
-  sender_counts <- numeric(0)
+  # --- Determine which families are needed ---
+  trans_names <- c("transitivity_binary", "transitivity_count",
+                   "transitivity_binary_ordered", "transitivity_count_ordered",
+                   "transitivity_exp_decay", "transitivity_exp_decay_ordered",
+                   "transitivity_time_recent", "transitivity_time_first",
+                   "transitivity_time_recent_ordered",
+                   "transitivity_time_first_ordered")
+  cyc_names   <- c("cyclic_binary", "cyclic_count", "cyclic_time_recent")
+  sb_names    <- c("sending_balance_binary", "sending_balance_count",
+                   "sending_balance_time_recent")
+  rb_names    <- c("receiving_balance_binary", "receiving_balance_count",
+                   "receiving_balance_time_recent")
+  need_triadic <- any(c(trans_names, cyc_names, sb_names, rb_names) %in% stats)
+
+  # --- Tracking data structures ---
+  dyad_key <- function(s, r) paste0(s, "->", r)
+
+  sender_counts  <- numeric(0)
   receiver_counts <- numeric(0)
-  seen_dyads <- new.env(parent = emptyenv())
-  last_times <- numeric(0)
+  dyad_last_time  <- new.env(parent = emptyenv())
+  dyad_first_time <- new.env(parent = emptyenv())
+  dyad_event_count <- new.env(parent = emptyenv())
+  dyad_times      <- new.env(parent = emptyenv())
+
+  if (need_triadic) {
+    out_targets <- new.env(parent = emptyenv())
+    in_sources  <- new.env(parent = emptyenv())
+  }
 
   get_count <- function(x, key) {
     if (!length(x)) return(0)
@@ -258,50 +370,228 @@ compute_endogenous_features <- function(
     val
   }
 
-  dyad_key <- function(s, r) paste0(s, "->", r)
-
-  if ("sender_outdegree" %in% stats) {
-    log_df$sender_outdegree <- numeric(n)
-  }
-  if ("receiver_indegree" %in% stats) {
-    log_df$receiver_indegree <- numeric(n)
-  }
-  if ("reciprocity" %in% stats) {
-    log_df$reciprocity <- integer(n)
-  }
-  if ("recency" %in% stats) {
-    log_df$recency <- rep(NA_real_, n)
-  }
-
-  for (i in seq_len(n)) {
-    s <- log_df$sender[i]
-    r <- log_df$receiver[i]
-    t <- log_df$time[i]
-
-    if ("sender_outdegree" %in% stats) {
-      log_df$sender_outdegree[i] <- get_count(sender_counts, s)
+  # --- Initialize output columns ---
+  binary_set <- c("reciprocity", "reciprocity_binary",
+                  "transitivity_binary", "transitivity_binary_ordered",
+                  "cyclic_binary", "sending_balance_binary",
+                  "receiving_balance_binary")
+  count_set <- c("sender_outdegree", "receiver_indegree",
+                 "reciprocity_count", "reciprocity_exp_decay",
+                 "transitivity_count", "transitivity_count_ordered",
+                 "transitivity_exp_decay", "transitivity_exp_decay_ordered",
+                 "cyclic_count", "sending_balance_count",
+                 "receiving_balance_count")
+  for (stat in stats) {
+    if (stat %in% binary_set) {
+      log_df[[stat]] <- integer(n)
+    } else if (stat %in% count_set) {
+      log_df[[stat]] <- numeric(n)
+    } else {
+      log_df[[stat]] <- rep(NA_real_, n)
     }
-    if ("receiver_indegree" %in% stats) {
-      log_df$receiver_indegree[i] <- get_count(receiver_counts, r)
+  }
+
+  # --- Triadic helper --------------------------------------------------
+  # Computes binary / count / time / exp-decay stats for a given set of
+  # intermediaries whose two edges are retrieved via get_e1_times / get_e2_times.
+  compute_triadic <- function(s, r, t_now, prefix, intermediaries,
+                              get_e1_times, get_e2_times) {
+    res <- list()
+    req <- stats[startsWith(stats, paste0(prefix, "_"))]
+    if (!length(req)) return(res)
+
+    n_k <- length(intermediaries)
+    b_nm <- paste0(prefix, "_binary")
+    c_nm <- paste0(prefix, "_count")
+    if (b_nm %in% req) res[[b_nm]] <- as.integer(n_k > 0L)
+    if (c_nm %in% req) res[[c_nm]] <- n_k
+
+    if (n_k == 0L) {
+      for (nm in req) {
+        if (is.null(res[[nm]])) {
+          res[[nm]] <- if (grepl("binary|count|exp", nm)) 0 else NA_real_
+        }
+      }
+      return(res)
     }
-    if ("reciprocity" %in% stats) {
-      reverse_key <- dyad_key(r, s)
-      log_df$reciprocity[i] <- as.integer(!is.null(seen_dyads[[reverse_key]]))
-    }
-    if ("recency" %in% stats) {
-      key <- dyad_key(s, r)
-      last_time <- last_times[key]
-      if (length(last_time) && !is.na(last_time)) {
-        log_df$recency[i] <- t - last_time
+
+    need_ord  <- any(grepl("ordered", req))
+    need_exp  <- any(grepl("exp_decay", req))
+    need_time <- any(grepl("time_", req))
+
+    form_recent     <- -Inf
+    form_first      <- Inf
+    n_ordered       <- 0L
+    form_ord_recent <- -Inf
+    form_ord_first  <- Inf
+    exp_sum         <- 0
+    exp_ord_sum     <- 0
+
+    for (ki in seq_along(intermediaries)) {
+      k  <- intermediaries[ki]
+      e1 <- get_e1_times(k)
+      e2 <- get_e2_times(k)
+
+      last_e1  <- max(e1)
+      last_e2  <- max(e2)
+      completion <- max(last_e1, last_e2)
+
+      if (need_time) {
+        if (completion > form_recent) form_recent <- completion
+        first_completion <- max(min(e1), min(e2))
+        if (first_completion < form_first) form_first <- first_completion
+      }
+      if (need_exp && !is.null(half_life)) {
+        exp_sum <- exp_sum +
+          exp(-(t_now - completion) * log(2) / half_life)
+      }
+      if (need_ord) {
+        valid_e2 <- e2[e2 > min(e1)]
+        if (length(valid_e2)) {
+          n_ordered <- n_ordered + 1L
+          latest_v   <- max(valid_e2)
+          earliest_v <- min(valid_e2)
+          if (latest_v > form_ord_recent) form_ord_recent <- latest_v
+          if (earliest_v < form_ord_first) form_ord_first <- earliest_v
+          if (need_exp && !is.null(half_life)) {
+            exp_ord_sum <- exp_ord_sum +
+              exp(-(t_now - latest_v) * log(2) / half_life)
+          }
+        }
       }
     }
 
-    sender_counts[s] <- get_count(sender_counts, s) + 1
-    receiver_counts[r] <- get_count(receiver_counts, r) + 1
+    tr_nm <- paste0(prefix, "_time_recent")
+    tf_nm <- paste0(prefix, "_time_first")
+    if (tr_nm %in% req) res[[tr_nm]] <- t_now - form_recent
+    if (tf_nm %in% req) res[[tf_nm]] <- t_now - form_first
 
+    e_nm <- paste0(prefix, "_exp_decay")
+    if (e_nm %in% req) res[[e_nm]] <- exp_sum
+
+    bo_nm  <- paste0(prefix, "_binary_ordered")
+    co_nm  <- paste0(prefix, "_count_ordered")
+    tro_nm <- paste0(prefix, "_time_recent_ordered")
+    tfo_nm <- paste0(prefix, "_time_first_ordered")
+    eo_nm  <- paste0(prefix, "_exp_decay_ordered")
+    if (bo_nm %in% req) res[[bo_nm]] <- as.integer(n_ordered > 0L)
+    if (co_nm %in% req) res[[co_nm]] <- n_ordered
+    if (n_ordered > 0L) {
+      if (tro_nm %in% req) res[[tro_nm]] <- t_now - form_ord_recent
+      if (tfo_nm %in% req) res[[tfo_nm]] <- t_now - form_ord_first
+      if (eo_nm  %in% req) res[[eo_nm]]  <- exp_ord_sum
+    } else {
+      if (tro_nm %in% req) res[[tro_nm]] <- NA_real_
+      if (tfo_nm %in% req) res[[tfo_nm]] <- NA_real_
+      if (eo_nm  %in% req) res[[eo_nm]]  <- 0
+    }
+
+    res
+  }
+
+  # --- Main loop -------------------------------------------------------
+  for (i in seq_len(n)) {
+    s  <- as.character(log_df$sender[i])
+    r  <- as.character(log_df$receiver[i])
+    ti <- log_df$time[i]
     key_sr <- dyad_key(s, r)
-    seen_dyads[[key_sr]] <- TRUE
-    last_times[key_sr] <- t
+    key_rs <- dyad_key(r, s)
+
+    # Degree
+    if ("sender_outdegree" %in% stats)
+      log_df$sender_outdegree[i] <- get_count(sender_counts, s)
+    if ("receiver_indegree" %in% stats)
+      log_df$receiver_indegree[i] <- get_count(receiver_counts, r)
+
+    # Recency (same-direction dyad)
+    if ("recency" %in% stats) {
+      lt <- dyad_last_time[[key_sr]]
+      if (!is.null(lt)) log_df$recency[i] <- ti - lt
+    }
+
+    # Reciprocity family (reverse-dyad)
+    has_reverse <- !is.null(dyad_event_count[[key_rs]])
+    if ("reciprocity" %in% stats)
+      log_df$reciprocity[i] <- as.integer(has_reverse)
+    if ("reciprocity_binary" %in% stats)
+      log_df$reciprocity_binary[i] <- as.integer(has_reverse)
+    if ("reciprocity_count" %in% stats) {
+      rc <- dyad_event_count[[key_rs]]
+      log_df$reciprocity_count[i] <- if (is.null(rc)) 0 else rc
+    }
+    if ("reciprocity_exp_decay" %in% stats) {
+      rs_t <- dyad_times[[key_rs]]
+      log_df$reciprocity_exp_decay[i] <-
+        if (is.null(rs_t)) 0 else sum(exp(-(ti - rs_t) * log(2) / half_life))
+    }
+    if ("reciprocity_time_recent" %in% stats) {
+      lt_rs <- dyad_last_time[[key_rs]]
+      if (!is.null(lt_rs)) log_df$reciprocity_time_recent[i] <- ti - lt_rs
+    }
+    if ("reciprocity_time_first" %in% stats) {
+      ft_rs <- dyad_first_time[[key_rs]]
+      if (!is.null(ft_rs)) log_df$reciprocity_time_first[i] <- ti - ft_rs
+    }
+
+    # Triadic statistics
+    if (need_triadic) {
+      s_out <- out_targets[[s]]; if (is.null(s_out)) s_out <- character(0)
+      r_out <- out_targets[[r]]; if (is.null(r_out)) r_out <- character(0)
+      s_in  <- in_sources[[s]];  if (is.null(s_in))  s_in  <- character(0)
+      r_in  <- in_sources[[r]];  if (is.null(r_in))  r_in  <- character(0)
+
+      # Transitivity: s -> k -> r
+      if (any(trans_names %in% stats)) {
+        ks <- setdiff(intersect(s_out, r_in), c(s, r))
+        tri <- compute_triadic(s, r, ti, "transitivity", ks,
+          function(k) dyad_times[[dyad_key(s, k)]],
+          function(k) dyad_times[[dyad_key(k, r)]])
+        for (nm in names(tri)) log_df[[nm]][i] <- tri[[nm]]
+      }
+
+      # Cyclic closure: r -> k -> s, closed by s -> r
+      if (any(cyc_names %in% stats)) {
+        ks <- setdiff(intersect(r_out, s_in), c(s, r))
+        cyc <- compute_triadic(s, r, ti, "cyclic", ks,
+          function(k) dyad_times[[dyad_key(r, k)]],
+          function(k) dyad_times[[dyad_key(k, s)]])
+        for (nm in names(cyc)) log_df[[nm]][i] <- cyc[[nm]]
+      }
+
+      # Sending balance: s -> k AND r -> k
+      if (any(sb_names %in% stats)) {
+        ks <- setdiff(intersect(s_out, r_out), c(s, r))
+        sb <- compute_triadic(s, r, ti, "sending_balance", ks,
+          function(k) dyad_times[[dyad_key(s, k)]],
+          function(k) dyad_times[[dyad_key(r, k)]])
+        for (nm in names(sb)) log_df[[nm]][i] <- sb[[nm]]
+      }
+
+      # Receiving balance: k -> s AND k -> r
+      if (any(rb_names %in% stats)) {
+        ks <- setdiff(intersect(s_in, r_in), c(s, r))
+        rb <- compute_triadic(s, r, ti, "receiving_balance", ks,
+          function(k) dyad_times[[dyad_key(k, s)]],
+          function(k) dyad_times[[dyad_key(k, r)]])
+        for (nm in names(rb)) log_df[[nm]][i] <- rb[[nm]]
+      }
+    }
+
+    # --- Update state ---
+    sender_counts[s]  <- get_count(sender_counts, s) + 1
+    receiver_counts[r] <- get_count(receiver_counts, r) + 1
+    dyad_last_time[[key_sr]] <- ti
+    if (is.null(dyad_first_time[[key_sr]])) dyad_first_time[[key_sr]] <- ti
+    prev_c <- dyad_event_count[[key_sr]]
+    dyad_event_count[[key_sr]] <- if (is.null(prev_c)) 1L else prev_c + 1L
+    dyad_times[[key_sr]] <- c(dyad_times[[key_sr]], ti)
+
+    if (need_triadic) {
+      cur_out <- out_targets[[s]]
+      if (is.null(cur_out) || !r %in% cur_out) out_targets[[s]] <- c(cur_out, r)
+      cur_in <- in_sources[[r]]
+      if (is.null(cur_in) || !s %in% cur_in) in_sources[[r]] <- c(cur_in, s)
+    }
   }
 
   log_df
