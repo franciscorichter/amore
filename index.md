@@ -23,6 +23,39 @@ diagnostics.
   statistics (e.g., reciprocity, recency, shared partners), in a
   consistent API.
 
+## Current capabilities
+
+The package already supports the end-to-end workflow needed for
+exploratory and simulation-based REM studies:
+
+- **Data intake and cleaning.**
+  [`standardize_event_log()`](https://franciscorichter.github.io/amore/reference/standardize_event_log.md)
+  harmonizes raw logs, drops loops/duplicates, and tags them as
+  `amore_event_log` objects.
+- **Exogenous actor covariates.**
+  [`simulate_actor_covariates()`](https://franciscorichter.github.io/amore/reference/simulate_actor_covariates.md)
+  generates static or AR(1) dynamic traits, while
+  [`attach_static_covariates()`](https://franciscorichter.github.io/amore/reference/attach_static_covariates.md)
+  merges user data.
+- **Endogenous covariates.**
+  [`compute_endogenous_features()`](https://franciscorichter.github.io/amore/reference/compute_endogenous_features.md)
+  now implements 28 endogenous effects (recency, multiple reciprocity
+  forms, transitivity, cyclic closure, sending/receiving balance)
+  following Juozaitienė & Wit (2025).
+- **Relational event simulation.**
+  [`simulate_relational_events()`](https://franciscorichter.github.io/amore/reference/simulate_relational_events.md)
+  runs Gillespie-style simulations with optional controls for partial
+  likelihood.
+- **Non-event sampling.**
+  [`sample_non_events()`](https://franciscorichter.github.io/amore/reference/sample_non_events.md)
+  constructs nested case-control tables with appearance, citation, and
+  remove risk-set rules.
+- **Inference-ready design matrices.** Simulations or sampled logs can
+  be fed to conditional logistic models or GAMs, as illustrated later in
+  the README.
+- **Documentation + tests.** pkgdown reference site, vignettes, and an
+  expanded unit-test suite (79 tests) keep the above pieces stable.
+
 ## Installation
 
 ``` r
@@ -138,31 +171,93 @@ event_log <- compute_endogenous_features(event_log,
 ### Exogenous covariate definitions
 
 [`simulate_actor_covariates()`](https://franciscorichter.github.io/amore/reference/simulate_actor_covariates.md)
-returns two lookup tables with one row per actor. For a sender (a) and
-covariate name (k):
+returns two lookup tables with one row per actor. For a sender/receiver
+and a given covariate name:
 
-- **Static covariates** (default) are Gaussian draws (x\_{a,k} (0, ^2)).
+- **Static covariates** (default) are independent Gaussian draws
+  centered at zero.
   [`attach_static_covariates()`](https://franciscorichter.github.io/amore/reference/attach_static_covariates.md)
-  stores them in the event log as `sender_<k>` or `receiver_<k>`. In the
-  example, `activity` acts as a baseline propensity for sending events
-  and `popularity` captures receiver-specific attractiveness.
-- **Dynamic covariates** arise when `time_points` is provided. \[
-  x\_{a,k}(t\_) = , x\_{a,k}(t\_{}) + *{a,k}(t*), *{a,k}(t*) (0, ^2). \]
-  Each actor/covariate pair follows an independent AR(1) trajectory at
-  the supplied time grid.
+  stores them in the event log as `sender_<name>` or `receiver_<name>`.
+  In the example, `activity` represents a baseline propensity for
+  sending events and `popularity` captures how attractive an actor is as
+  a receiver.
+- **Dynamic covariates** arise when `time_points` is supplied. Each
+  actor and covariate follows an AR(1) trajectory controlled by the
+  `rho` and `sd` arguments, so values drift smoothly through time while
+  remaining correlated from one time stamp to the next.
 
 ### Endogenous network statistics
 
-All endogenous summaries are evaluated immediately **before** the (i)-th
-event ((s_i, r_i, t_i)) is added to the log:
+All endogenous summaries are evaluated immediately **before** an event
+is logged. They follow the taxonomy of [Juozaitienė & Wit (2025,
+JRSS-A)](https://doi.org/10.1093/jrsssa/qnae132) and use the
+*continuous* convention (effects persist even after a closure event).
+Pass one or more stat names to
+[`compute_endogenous_features()`](https://franciscorichter.github.io/amore/reference/compute_endogenous_features.md).
 
-- **Sender outdegree:** (*{s_i}(t_i^-) =* {j \< i} \[s_j = s_i\]).
-- **Receiver indegree:** (*{r_i}(t_i^-) =* {j \< i} \[r_j = r_i\]).
-- **Reciprocity indicator:** (\_{(s_i,r_i)}(t_i^-) = \[ j \< i : (s_j,
-  r_j) = (r_i, s_i)\]).
-- **Recency:** (\_{(s_i,r_i)}(t_i^-) = t_i - { t_j : j \< i, (s_j, r_j)
-  = (s_i, r_i) }) with the convention that the value is `NA` when the
-  dyad has not appeared before.
+**Degree / baseline**
+
+| Stat name           | Description                                                                                  |
+|---------------------|----------------------------------------------------------------------------------------------|
+| `sender_outdegree`  | Number of events the sender has issued so far.                                               |
+| `receiver_indegree` | Number of events the receiver has received so far.                                           |
+| `recency`           | Elapsed time since the last event on the same ordered pair; `NA` when the dyad is brand new. |
+
+**Reciprocity** — history of the reverse dyad (receiver → sender)
+
+| Stat name                            | Description                                                                                                    |
+|--------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| `reciprocity` / `reciprocity_binary` | 1 if the reverse dyad has ever been observed, 0 otherwise.                                                     |
+| `reciprocity_count`                  | Total number of past reverse-dyad events.                                                                      |
+| `reciprocity_exp_decay`              | Exponentially weighted sum of past reverse-dyad events; older events contribute less according to `half_life`. |
+| `reciprocity_time_recent`            | Elapsed time since the most recent reverse-dyad event; `NA` if none.                                           |
+| `reciprocity_time_first`             | Elapsed time since the first reverse-dyad event; `NA` if none.                                                 |
+
+**Transitivity** — two-path s → k → r (the sender previously contacted
+some intermediary k who in turn contacted the receiver)
+
+| Stat name                          | Description                                                                    |
+|------------------------------------|--------------------------------------------------------------------------------|
+| `transitivity_binary`              | 1 if any such intermediary k exists, 0 otherwise.                              |
+| `transitivity_count`               | Number of distinct intermediaries.                                             |
+| `transitivity_binary_ordered`      | Like binary, but requiring the s → k event to precede the k → r event in time. |
+| `transitivity_count_ordered`       | Count with order restriction.                                                  |
+| `transitivity_exp_decay`           | Exp-decay weighted sum over two-paths (requires `half_life`).                  |
+| `transitivity_exp_decay_ordered`   | Exp-decay with order restriction.                                              |
+| `transitivity_time_recent`         | Time since the most recently completed two-path; `NA` if none.                 |
+| `transitivity_time_first`          | Time since the earliest two-path; `NA` if none.                                |
+| `transitivity_time_recent_ordered` | Time since the most recent ordered two-path; `NA` if none.                     |
+| `transitivity_time_first_ordered`  | Time since the earliest ordered two-path; `NA` if none.                        |
+
+**Cyclic closure** — two-path r → k → s, closed by event s → r (the
+receiver previously contacted k, and k previously contacted the sender)
+
+| Stat name            | Description                                               |
+|----------------------|-----------------------------------------------------------|
+| `cyclic_binary`      | 1 if any cyclic two-path exists, 0 otherwise.             |
+| `cyclic_count`       | Number of cyclic intermediaries.                          |
+| `cyclic_time_recent` | Time since the most recent cyclic two-path; `NA` if none. |
+
+**Sending balance** — shared target: both s → k and r → k exist (the
+sender and receiver have both contacted the same third actor k)
+
+| Stat name                     | Description                                                      |
+|-------------------------------|------------------------------------------------------------------|
+| `sending_balance_binary`      | 1 if any shared target exists, 0 otherwise.                      |
+| `sending_balance_count`       | Number of shared targets.                                        |
+| `sending_balance_time_recent` | Time since the most recent shared-target two-path; `NA` if none. |
+
+**Receiving balance** — shared source: both k → s and k → r exist (the
+sender and receiver have both been contacted by the same third actor k)
+
+| Stat name                       | Description                                                      |
+|---------------------------------|------------------------------------------------------------------|
+| `receiving_balance_binary`      | 1 if any shared source exists, 0 otherwise.                      |
+| `receiving_balance_count`       | Number of shared sources.                                        |
+| `receiving_balance_time_recent` | Time since the most recent shared-source two-path; `NA` if none. |
+
+All `*_exp_decay` statistics require a `half_life` argument that
+controls how quickly the influence of past events diminishes.
 
 ``` r
 # 4. Inference-ready case-control data
@@ -198,7 +293,8 @@ head(case_control_df[, c("sender", "receiver", "event", "stratum")])
 The helper keeps the original events (`event = 1`) and appends
 `n_controls` counterfactual dyads (`event = 0`) per stratum so
 conditional logistic / GAM estimators can compare realized vs. sampled
-alternatives. Candidate dyads are constructed via two knobs:
+alternatives. Candidate dyads are constructed via two knobs plus an
+optional risk-set rule:
 
 1.  **scope**
     - `"all"`: every actor ever seen in the data belongs to the sampling
@@ -210,6 +306,11 @@ alternatives. Candidate dyads are constructed via two knobs:
       (useful for single-mode networks).
     - `"two"`: draw senders and receivers from separate candidate pools
       (default for bipartite or directed settings).
+3.  **risk**
+    - `"standard"`: risk set never shrinks beyond the chosen scope.
+    - `"remove"`: once a realized dyad `(s_i, r_i)` occurs, it is
+      removed from consideration in later strata (e.g., species invasion
+      that cannot repeat).
 
 Set `allow_loops = TRUE` when self-ties should be considered and adjust
 `max_attempts` to control resampling when many candidate pairs coincide
@@ -218,22 +319,26 @@ with the observed event.
 The three sampling schemes we discussed earlier map directly onto these
 knobs:
 
-| Strategy label                | `scope`        | `mode`                 |
-|-------------------------------|----------------|------------------------|
-| **all + one-mode**            | `"all"`        | `"one"`                |
-| **all + two-mode**            | `"all"`        | `"two"`                |
-| **appearance + one/two-mode** | `"appearance"` | `"one"` **or** `"two"` |
+| Strategy label                | `scope`                   | `mode`                                   |
+|-------------------------------|---------------------------|------------------------------------------|
+| **all + one-mode**            | `"all"`                   | `"one"`                                  |
+| **all + two-mode**            | `"all"`                   | `"two"`                                  |
+| **appearance + one/two-mode** | `"appearance"`            | `"one"` or `"two"`                       |
+| **citation**                  | `"citation"`              | typically `"two"`                        |
+| **remove one/two-mode**       | `"all"` or `"appearance"` | `"one"` / `"two"`; set `risk = "remove"` |
 
 The last option is listed twice because you may want either a
 single-mode or a two-mode draw while still restricting to previously
 active actors.
 
-Mathematically, for each observed event ((s_i, r_i, t_i)) the function
-draws control dyads ((s\_{i heta}, r\_{i heta})*{}^{n*{}}) according to
-the chosen scope/mode, ensuring they are distinct from the realized
-pair. The output stacks \[ {(s_i, r_i, t_i, =1)} *{}^{n*{}} {(s\_{i},
-r\_{i}, t_i, =0)} \] into stratum (i) so likelihood contributions
-compare true events against their matched controls.
+For the citation sampler, senders are the papers that debut at the event
+time while receivers must have appeared strictly earlier. The
+`risk = "remove"` flag deletes realized dyads from future candidate sets
+to mimic one-off events such as biological invasions. Regardless of the
+configuration, each stratum contains the observed event (`event = 1`)
+followed by its sampled controls (`event = 0`), so conditional
+likelihood estimators can contrast what happened with what could have
+happened instead.
 
 ### Inference with GAM
 

@@ -42,8 +42,9 @@ counterfactual sender–receiver pairs according to predefined strategies.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">sample_non_events</span><span class="op">(</span></span>
 <span>  <span class="va">event_log</span>,</span>
 <span>  n_controls <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"all"</span>, <span class="st">"appearance"</span><span class="op">)</span>,</span>
+<span>  scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"all"</span>, <span class="st">"appearance"</span>, <span class="st">"citation"</span><span class="op">)</span>,</span>
 <span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"two"</span>, <span class="st">"one"</span><span class="op">)</span>,</span>
+<span>  risk <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"standard"</span>, <span class="st">"remove"</span><span class="op">)</span>,</span>
 <span>  allow_loops <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max_attempts <span class="op">=</span> <span class="fl">1000</span></span>
@@ -66,13 +67,22 @@ event.</p></dd>
 <dt id="arg-scope">scope<a class="anchor" aria-label="anchor" href="#arg-scope"></a></dt>
 <dd><p>Candidate set definition. <code>"all"</code> uses every actor observed in
 the data; <code>"appearance"</code> restricts to actors that have appeared in prior
-events.</p></dd>
+events; <code>"citation"</code> matches citation networks where senders are restricted
+to the papers that debut at the current time and receivers must have
+appeared earlier.</p></dd>
 
 
 <dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
 <dd><p><code>"one"</code> draws both sender and receiver from the same candidate
 pool (single-mode). <code>"two"</code> samples sender and receiver from separate pools
 (two-mode).</p></dd>
+
+
+<dt id="arg-risk">risk<a class="anchor" aria-label="anchor" href="#arg-risk"></a></dt>
+<dd><p>Strategy governing the risk set. <code>"standard"</code> (default) keeps all
+unrealized dyads available across strata, whereas <code>"remove"</code> deletes a dyad
+from the candidate pool after it has occurred (useful for processes such as
+species invasions where a pair cannot reoccur).</p></dd>
 
 
 <dt id="arg-allow-loops">allow_loops<a class="anchor" aria-label="anchor" href="#arg-allow-loops"></a></dt>

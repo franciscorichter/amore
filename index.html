@@ -72,6 +72,27 @@
 </ul>
 </div>
 <div class="section level2">
+<h2 id="current-capabilities">Current capabilities<a class="anchor" aria-label="anchor" href="#current-capabilities"></a>
+</h2>
+<p>The package already supports the end-to-end workflow needed for exploratory and simulation-based REM studies:</p>
+<ul>
+<li>
+<strong>Data intake and cleaning.</strong> <code><a href="reference/standardize_event_log.html">standardize_event_log()</a></code> harmonizes raw logs, drops loops/duplicates, and tags them as <code>amore_event_log</code> objects.</li>
+<li>
+<strong>Exogenous actor covariates.</strong> <code><a href="reference/simulate_actor_covariates.html">simulate_actor_covariates()</a></code> generates static or AR(1) dynamic traits, while <code><a href="reference/attach_static_covariates.html">attach_static_covariates()</a></code> merges user data.</li>
+<li>
+<strong>Endogenous covariates.</strong> <code><a href="reference/compute_endogenous_features.html">compute_endogenous_features()</a></code> now implements 28 endogenous effects (recency, multiple reciprocity forms, transitivity, cyclic closure, sending/receiving balance) following Juozaitienė &amp; Wit (2025).</li>
+<li>
+<strong>Relational event simulation.</strong> <code><a href="reference/simulate_relational_events.html">simulate_relational_events()</a></code> runs Gillespie-style simulations with optional controls for partial likelihood.</li>
+<li>
+<strong>Non-event sampling.</strong> <code><a href="reference/sample_non_events.html">sample_non_events()</a></code> constructs nested case-control tables with appearance, citation, and remove risk-set rules.</li>
+<li>
+<strong>Inference-ready design matrices.</strong> Simulations or sampled logs can be fed to conditional logistic models or GAMs, as illustrated later in the README.</li>
+<li>
+<strong>Documentation + tests.</strong> pkgdown reference site, vignettes, and an expanded unit-test suite (79 tests) keep the above pieces stable.</li>
+</ul>
+</div>
+<div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -166,28 +187,207 @@
 <div class="section level3">
 <h3 id="exogenous-covariate-definitions">Exogenous covariate definitions<a class="anchor" aria-label="anchor" href="#exogenous-covariate-definitions"></a>
 </h3>
-<p><code><a href="reference/simulate_actor_covariates.html">simulate_actor_covariates()</a></code> returns two lookup tables with one row per actor. For a sender (a) and covariate name (k):</p>
+<p><code><a href="reference/simulate_actor_covariates.html">simulate_actor_covariates()</a></code> returns two lookup tables with one row per actor. For a sender/receiver and a given covariate name:</p>
 <ul>
 <li>
-<strong>Static covariates</strong> (default) are Gaussian draws (x_{a,k} (0, ^2)). <code><a href="reference/attach_static_covariates.html">attach_static_covariates()</a></code> stores them in the event log as <code>sender_&lt;k&gt;</code> or <code>receiver_&lt;k&gt;</code>. In the example, <code>activity</code> acts as a baseline propensity for sending events and <code>popularity</code> captures receiver-specific attractiveness.</li>
+<strong>Static covariates</strong> (default) are independent Gaussian draws centered at zero. <code><a href="reference/attach_static_covariates.html">attach_static_covariates()</a></code> stores them in the event log as <code>sender_&lt;name&gt;</code> or <code>receiver_&lt;name&gt;</code>. In the example, <code>activity</code> represents a baseline propensity for sending events and <code>popularity</code> captures how attractive an actor is as a receiver.</li>
 <li>
-<strong>Dynamic covariates</strong> arise when <code>time_points</code> is provided. [ x_{a,k}(t_) = , x_{a,k}(t_{}) + <em>{a,k}(t</em>), <em>{a,k}(t</em>) (0, ^2). ] Each actor/covariate pair follows an independent AR(1) trajectory at the supplied time grid.</li>
+<strong>Dynamic covariates</strong> arise when <code>time_points</code> is supplied. Each actor and covariate follows an AR(1) trajectory controlled by the <code>rho</code> and <code>sd</code> arguments, so values drift smoothly through time while remaining correlated from one time stamp to the next.</li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="endogenous-network-statistics">Endogenous network statistics<a class="anchor" aria-label="anchor" href="#endogenous-network-statistics"></a>
 </h3>
-<p>All endogenous summaries are evaluated immediately <strong>before</strong> the (i)-th event ((s_i, r_i, t_i)) is added to the log:</p>
-<ul>
-<li>
-<strong>Sender outdegree:</strong> (<em>{s_i}(t_i^-) = </em>{j &lt; i} [s_j = s_i]).</li>
-<li>
-<strong>Receiver indegree:</strong> (<em>{r_i}(t_i^-) = </em>{j &lt; i} [r_j = r_i]).</li>
-<li>
-<strong>Reciprocity indicator:</strong> (_{(s_i,r_i)}(t_i^-) = [ j &lt; i : (s_j, r_j) = (r_i, s_i)]).</li>
-<li>
-<strong>Recency:</strong> (_{(s_i,r_i)}(t_i^-) = t_i - { t_j : j &lt; i, (s_j, r_j) = (s_i, r_i) }) with the convention that the value is <code>NA</code> when the dyad has not appeared before.</li>
-</ul>
+<p>All endogenous summaries are evaluated immediately <strong>before</strong> an event is logged. They follow the taxonomy of <a href="https://doi.org/10.1093/jrsssa/qnae132" class="external-link">Juozaitienė &amp; Wit (2025, JRSS-A)</a> and use the <em>continuous</em> convention (effects persist even after a closure event). Pass one or more stat names to <code><a href="reference/compute_endogenous_features.html">compute_endogenous_features()</a></code>.</p>
+<p><strong>Degree / baseline</strong></p>
+<table class="table">
+<colgroup>
+<col width="45%">
+<col width="54%">
+</colgroup>
+<thead><tr class="header">
+<th>Stat name</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>sender_outdegree</code></td>
+<td>Number of events the sender has issued so far.</td>
+</tr>
+<tr class="even">
+<td><code>receiver_indegree</code></td>
+<td>Number of events the receiver has received so far.</td>
+</tr>
+<tr class="odd">
+<td><code>recency</code></td>
+<td>Elapsed time since the last event on the same ordered pair; <code>NA</code> when the dyad is brand new.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reciprocity</strong> — history of the reverse dyad (receiver → sender)</p>
+<table class="table">
+<colgroup>
+<col width="45%">
+<col width="54%">
+</colgroup>
+<thead><tr class="header">
+<th>Stat name</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>reciprocity</code> / <code>reciprocity_binary</code>
+</td>
+<td>1 if the reverse dyad has ever been observed, 0 otherwise.</td>
+</tr>
+<tr class="even">
+<td><code>reciprocity_count</code></td>
+<td>Total number of past reverse-dyad events.</td>
+</tr>
+<tr class="odd">
+<td><code>reciprocity_exp_decay</code></td>
+<td>Exponentially weighted sum of past reverse-dyad events; older events contribute less according to <code>half_life</code>.</td>
+</tr>
+<tr class="even">
+<td><code>reciprocity_time_recent</code></td>
+<td>Elapsed time since the most recent reverse-dyad event; <code>NA</code> if none.</td>
+</tr>
+<tr class="odd">
+<td><code>reciprocity_time_first</code></td>
+<td>Elapsed time since the first reverse-dyad event; <code>NA</code> if none.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Transitivity</strong> — two-path s → k → r (the sender previously contacted some intermediary k who in turn contacted the receiver)</p>
+<table class="table">
+<colgroup>
+<col width="45%">
+<col width="54%">
+</colgroup>
+<thead><tr class="header">
+<th>Stat name</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>transitivity_binary</code></td>
+<td>1 if any such intermediary k exists, 0 otherwise.</td>
+</tr>
+<tr class="even">
+<td><code>transitivity_count</code></td>
+<td>Number of distinct intermediaries.</td>
+</tr>
+<tr class="odd">
+<td><code>transitivity_binary_ordered</code></td>
+<td>Like binary, but requiring the s → k event to precede the k → r event in time.</td>
+</tr>
+<tr class="even">
+<td><code>transitivity_count_ordered</code></td>
+<td>Count with order restriction.</td>
+</tr>
+<tr class="odd">
+<td><code>transitivity_exp_decay</code></td>
+<td>Exp-decay weighted sum over two-paths (requires <code>half_life</code>).</td>
+</tr>
+<tr class="even">
+<td><code>transitivity_exp_decay_ordered</code></td>
+<td>Exp-decay with order restriction.</td>
+</tr>
+<tr class="odd">
+<td><code>transitivity_time_recent</code></td>
+<td>Time since the most recently completed two-path; <code>NA</code> if none.</td>
+</tr>
+<tr class="even">
+<td><code>transitivity_time_first</code></td>
+<td>Time since the earliest two-path; <code>NA</code> if none.</td>
+</tr>
+<tr class="odd">
+<td><code>transitivity_time_recent_ordered</code></td>
+<td>Time since the most recent ordered two-path; <code>NA</code> if none.</td>
+</tr>
+<tr class="even">
+<td><code>transitivity_time_first_ordered</code></td>
+<td>Time since the earliest ordered two-path; <code>NA</code> if none.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cyclic closure</strong> — two-path r → k → s, closed by event s → r (the receiver previously contacted k, and k previously contacted the sender)</p>
+<table class="table">
+<colgroup>
+<col width="45%">
+<col width="54%">
+</colgroup>
+<thead><tr class="header">
+<th>Stat name</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>cyclic_binary</code></td>
+<td>1 if any cyclic two-path exists, 0 otherwise.</td>
+</tr>
+<tr class="even">
+<td><code>cyclic_count</code></td>
+<td>Number of cyclic intermediaries.</td>
+</tr>
+<tr class="odd">
+<td><code>cyclic_time_recent</code></td>
+<td>Time since the most recent cyclic two-path; <code>NA</code> if none.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sending balance</strong> — shared target: both s → k and r → k exist (the sender and receiver have both contacted the same third actor k)</p>
+<table class="table">
+<colgroup>
+<col width="45%">
+<col width="54%">
+</colgroup>
+<thead><tr class="header">
+<th>Stat name</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>sending_balance_binary</code></td>
+<td>1 if any shared target exists, 0 otherwise.</td>
+</tr>
+<tr class="even">
+<td><code>sending_balance_count</code></td>
+<td>Number of shared targets.</td>
+</tr>
+<tr class="odd">
+<td><code>sending_balance_time_recent</code></td>
+<td>Time since the most recent shared-target two-path; <code>NA</code> if none.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Receiving balance</strong> — shared source: both k → s and k → r exist (the sender and receiver have both been contacted by the same third actor k)</p>
+<table class="table">
+<colgroup>
+<col width="45%">
+<col width="54%">
+</colgroup>
+<thead><tr class="header">
+<th>Stat name</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>receiving_balance_binary</code></td>
+<td>1 if any shared source exists, 0 otherwise.</td>
+</tr>
+<tr class="even">
+<td><code>receiving_balance_count</code></td>
+<td>Number of shared sources.</td>
+</tr>
+<tr class="odd">
+<td><code>receiving_balance_time_recent</code></td>
+<td>Time since the most recent shared-source two-path; <code>NA</code> if none.</td>
+</tr>
+</tbody>
+</table>
+<p>All <code>*_exp_decay</code> statistics require a <code>half_life</code> argument that controls how quickly the influence of past events diminishes.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 4. Inference-ready case-control data</span></span>
 <span><span class="va">cases_controls</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_relational_events.html">simulate_relational_events</a></span><span class="op">(</span></span>
@@ -214,7 +414,7 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">case_control_df</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sender"</span>, <span class="st">"receiver"</span>, <span class="st">"event"</span>, <span class="st">"stratum"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
-<p>The helper keeps the original events (<code>event = 1</code>) and appends <code>n_controls</code> counterfactual dyads (<code>event = 0</code>) per stratum so conditional logistic / GAM estimators can compare realized vs. sampled alternatives. Candidate dyads are constructed via two knobs:</p>
+<p>The helper keeps the original events (<code>event = 1</code>) and appends <code>n_controls</code> counterfactual dyads (<code>event = 0</code>) per stratum so conditional logistic / GAM estimators can compare realized vs. sampled alternatives. Candidate dyads are constructed via two knobs plus an optional risk-set rule:</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>scope</strong>
@@ -234,14 +434,23 @@
 <code>"two"</code>: draw senders and receivers from separate candidate pools (default for bipartite or directed settings).</li>
 </ul>
 </li>
+<li>
+<strong>risk</strong>
+<ul>
+<li>
+<code>"standard"</code>: risk set never shrinks beyond the chosen scope.</li>
+<li>
+<code>"remove"</code>: once a realized dyad <code>(s_i, r_i)</code> occurs, it is removed from consideration in later strata (e.g., species invasion that cannot repeat).</li>
+</ul>
+</li>
 </ol>
 <p>Set <code>allow_loops = TRUE</code> when self-ties should be considered and adjust <code>max_attempts</code> to control resampling when many candidate pairs coincide with the observed event.</p>
 <p>The three sampling schemes we discussed earlier map directly onto these knobs:</p>
 <table class="table">
 <colgroup>
-<col width="42%">
-<col width="23%">
-<col width="34%">
+<col width="40%">
+<col width="22%">
+<col width="36%">
 </colgroup>
 <thead><tr class="header">
 <th>Strategy label</th>
@@ -263,13 +472,28 @@
 <td><strong>appearance + one/two-mode</strong></td>
 <td><code>"appearance"</code></td>
 <td>
-<code>"one"</code> <strong>or</strong> <code>"two"</code>
+<code>"one"</code> or <code>"two"</code>
+</td>
+</tr>
+<tr class="even">
+<td><strong>citation</strong></td>
+<td><code>"citation"</code></td>
+<td>typically <code>"two"</code>
+</td>
+</tr>
+<tr class="odd">
+<td><strong>remove one/two-mode</strong></td>
+<td>
+<code>"all"</code> or <code>"appearance"</code>
+</td>
+<td>
+<code>"one"</code> / <code>"two"</code>; set <code>risk = "remove"</code>
 </td>
 </tr>
 </tbody>
 </table>
 <p>The last option is listed twice because you may want either a single-mode or a two-mode draw while still restricting to previously active actors.</p>
-<p>Mathematically, for each observed event ((s_i, r_i, t_i)) the function draws control dyads ((s_{i heta}, r_{i heta})<em>{}^{n</em>{}}) according to the chosen scope/mode, ensuring they are distinct from the realized pair. The output stacks [ {(s_i, r_i, t_i, =1)}  <em>{}^{n</em>{}} {(s_{i}, r_{i}, t_i, =0)} ] into stratum (i) so likelihood contributions compare true events against their matched controls.</p>
+<p>For the citation sampler, senders are the papers that debut at the event time while receivers must have appeared strictly earlier. The <code>risk = "remove"</code> flag deletes realized dyads from future candidate sets to mimic one-off events such as biological invasions. Regardless of the configuration, each stratum contains the observed event (<code>event = 1</code>) followed by its sampled controls (<code>event = 0</code>), so conditional likelihood estimators can contrast what happened with what could have happened instead.</p>
 </div>
 <div class="section level3">
 <h3 id="inference-with-gam">Inference with GAM<a class="anchor" aria-label="anchor" href="#inference-with-gam"></a>

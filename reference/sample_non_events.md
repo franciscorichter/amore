@@ -10,8 +10,9 @@ strategies.
 sample_non_events(
   event_log,
   n_controls = 1,
-  scope = c("all", "appearance"),
+  scope = c("all", "appearance", "citation"),
   mode = c("two", "one"),
+  risk = c("standard", "remove"),
   allow_loops = FALSE,
   seed = NULL,
   max_attempts = 1000
@@ -32,13 +33,22 @@ sample_non_events(
 
   Candidate set definition. `"all"` uses every actor observed in the
   data; `"appearance"` restricts to actors that have appeared in prior
-  events.
+  events; `"citation"` matches citation networks where senders are
+  restricted to the papers that debut at the current time and receivers
+  must have appeared earlier.
 
 - mode:
 
   `"one"` draws both sender and receiver from the same candidate pool
   (single-mode). `"two"` samples sender and receiver from separate pools
   (two-mode).
+
+- risk:
+
+  Strategy governing the risk set. `"standard"` (default) keeps all
+  unrealized dyads available across strata, whereas `"remove"` deletes a
+  dyad from the candidate pool after it has occurred (useful for
+  processes such as species invasions where a pair cannot reoccur).
 
 - allow_loops:
 
