@@ -93,15 +93,14 @@ stratified conditional logistic regression via `survival::coxph` —
 the right tool when you want more controls per case for tighter
 inference:
 
-```{r eval = requireNamespace("survival", quietly = TRUE)}
+```{r}
 compare_models(classroom_events, specs,
                n_controls = 3, seed = 11)
 ```
 
-The `n_obs` column now reports the number of strata (one per case),
-and `survival` is in the package's *Suggests* — required only when
-`n_controls > 1`. AIC values across specs remain comparable
-because every spec sees the same shared case-control sample.
+The `n_obs` column now reports the number of strata (one per case).
+AIC values across specs remain comparable because every spec sees the
+same shared case-control sample.
 
 ## 4. Inspect coefficients of a chosen specification
 

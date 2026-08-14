@@ -36,3 +36,8 @@ docs/
 /paper/benchmark/*.out
 /paper/benchmark/*.pdf
 !/paper/PAPER_DESIGN.md
+
+# Session state and stale worktrees (146 MB)
+.claude/
+paper/manuscript/*.fdb_latexmk
+paper/manuscript/*.fls

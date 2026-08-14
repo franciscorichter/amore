@@ -10,14 +10,14 @@ numerical and graphical output below is produced by
 
 ---
 
-## Classroom · sender frailty flips the AIC ranking
+## Classroom · sender frailty narrows, but does not reverse, the count family's lead
 
 The central methodological lesson of Juozaitienė & Wit (2024):
 without an actor-heterogeneity correction the `*_count` family
 silently absorbs sender activity differences, so it dominates the
 AIC table even when timing variants are the better description of
-the dynamics. Adding a Gamma `survival::frailty()` on the sender
-flips the ranking.
+the dynamics. Adding a Gamma `survival::frailty()` on the sender absorbs a
+large part of that advantage --- but on this stream it does not overturn it.
 
 ```r
 data(classroom_events)
@@ -28,20 +28,20 @@ specs <- list(
                   "transitivity_time_recent_interrupted"))
 
 compare_models(classroom_events, specs, n_controls = 3, seed = 11)
-#>         model n_terms n_obs  log_lik      AIC delta_AIC
-#> 1       count       2   691 -5248.2 11880.5     0.0
-#> 2  continuous       2   691 -5368.1 12120.2   239.7
-#> 3 interrupted       2   691 -5449.8 12283.6   403.1
+#>         model n_terms n_obs   log_lik      AIC delta_AIC
+#> 1       count       2   691 -730.3872 1464.774    0.0000
+#> 2  continuous       2   691 -850.2339 1704.468  239.6934
+#> 3 interrupted       2   691 -931.9619 1867.924  403.1494
 
 compare_models(classroom_events, specs, n_controls = 3, seed = 11,
                random_effects = "sender")
-#>         model n_terms n_obs  log_lik      AIC delta_AIC
-#> 1  continuous       2   691 -5177.7 11776.8     0.0
-#> 2 interrupted       2   691 -5269.4 11960.5   183.7
-#> 3       count       2   691      NA      NA     NA       # convergence failure
+#>         model n_terms n_obs   log_lik      AIC delta_AIC
+#> 1       count       2   691 -587.5516 1216.857    0.0000
+#> 2  continuous       2   691 -659.9403 1362.168  145.3112
+#> 3 interrupted       2   691 -751.6045 1545.503  328.6461
 ```
 
-![Classroom flip](figures/realdata-classroom-flip.png)
+![Classroom AIC comparison with and without a sender frailty](figures/realdata-classroom-flip.png)
 
 Two findings worth flagging:
 

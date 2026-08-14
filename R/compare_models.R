@@ -220,11 +220,11 @@ compare_models <- function(event_log,
       if ("sender" %in% random_effects) {
         cc_feat_sorted$.sender_factor <- factor(cc_feat_sorted$sender)
         frailty_terms <- c(frailty_terms,
-                           "survival::frailty(.sender_factor)")
+                           "frailty(.sender_factor)")
       } else if ("receiver" %in% random_effects) {
         cc_feat_sorted$.receiver_factor <- factor(cc_feat_sorted$receiver)
         frailty_terms <- c(frailty_terms,
-                           "survival::frailty(.receiver_factor)")
+                           "frailty(.receiver_factor)")
       }
     } else {
       cc_feat_sorted$.sender_factor   <- factor(cc_feat_sorted$sender)
@@ -241,7 +241,7 @@ compare_models <- function(event_log,
         # `(1 | factor)` terms. The strata() term stays in the same
         # formula. The deprecated `random = list(...)` argument is
         # avoided.
-        rhs_terms <- c(stat_set, "survival::strata(stratum)",
+        rhs_terms <- c(stat_set, "strata(stratum)",
                        "(1 | .sender_factor)", "(1 | .receiver_factor)")
         fm <- stats::as.formula(paste(".surv ~",
           paste(rhs_terms, collapse = " + ")))
@@ -254,7 +254,7 @@ compare_models <- function(event_log,
             NULL
           })
       } else {
-        rhs_terms <- c(stat_set, "survival::strata(stratum)", frailty_terms)
+        rhs_terms <- c(stat_set, "strata(stratum)", frailty_terms)
         fm <- stats::as.formula(paste(".surv ~",
           paste(rhs_terms, collapse = " + ")))
         # frailty() inside coxph can fail to converge on small data or

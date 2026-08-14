@@ -57,6 +57,19 @@
 #' otherwise `x_ev` / `x_nv`. `tvnl` uses `transformed_time` when present.
 #' Undirected logs (senders only, no receiver/`TARGET` column) are supported.
 #'
+#' @section Name clashes with other relational-event packages:
+#' The name `rem()` is used by three CRAN packages: this one,
+#' \pkg{relevent} (on CRAN since 2010) and \pkg{redeem} (2026). Attaching
+#' more than one of them masks the others, and R will say so at load time.
+#'
+#' The deeper issue is dispatch rather than masking. `amorem`'s fitted object
+#' has class `"rem"`, and \pkg{relevent} and \pkg{redeem} register S3 methods
+#' on that same class name, so merely *loading* one of them --- attaching is
+#' not required --- can re-point `print()`, `summary()`, `plot()`, `predict()`
+#' and `logLik()` for objects fitted here. If you work with more than one of
+#' these packages in a session, call `amorem::rem()` explicitly and be
+#' deliberate about which package is loaded when you print or plot a fit.
+#'
 #' @param formula A formula; see *Formula syntax*.
 #' @param data A data.frame of preprocessed case-control data (wide for the
 #'   `gam` method; long with a case indicator and stratum for `clogit`). For
@@ -88,7 +101,7 @@
 #'   (whose `wide = TRUE` output is a valid input here),
 #'   [simulate_directed_hyperevents_tvnl()].
 #'
-#' @importFrom survival clogit strata coxph Surv
+#' @importFrom survival clogit strata coxph Surv frailty
 #'
 #' @examples
 #' set.seed(1)

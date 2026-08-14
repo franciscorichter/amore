@@ -433,9 +433,19 @@ case-control stratum, trained by Adam on the conditional-logistic partial
 likelihood. Because it scores the full covariate vector *jointly*, it can
 capture **interactions** between endogenous statistics that the additive
 `gam` backend cannot — at the cost of a coefficient table (effects are
-recovered post-hoc via partial-dependence plots) and, for now, of
-uncertainty quantification. The implementation is pure R with no extra
-dependencies, so it is reachable directly from `install.packages()`. See the
+recovered post-hoc via partial-dependence plots) and of coefficient-level
+inference: the fitted object carries no parameter vector and no
+variance-covariance matrix, so uncertainty comes from the separate stratum
+bootstrap of `nn_uncertainty()`, which bands the partial-dependence curves and
+the concordance rather than the parameters. By default the implementation is
+pure R with no extra dependencies, reachable directly from
+`install.packages()`; `nn_control(engine = "torch")` swaps the training loop
+for **torch** autograd, a *Suggests* dependency requiring equal-sized strata.
+This joint-scoring design is what distinguishes it from DREAM, the deep
+relational event additive model of
+[Filippi-Mazzola & Wit (2024, *Social Networks* 79)](https://doi.org/10.1016/j.socnet.2024.05.004),
+which sums one small network per covariate; at a single sampled control the two
+objectives coincide. See the
 [Validation experiments](validation-experiments.html) for a gradient-correctness
 check and an interaction-recovery comparison against the linear backend.
 
@@ -457,6 +467,8 @@ fit_add <- rem(IS_OBSERVED ~ individual.activity + dyadic.activity,
 plot(fit_add$fit, type = "pdp")   # the fitted additive spline curves
 ```
 
-**Future directions.** An optional `torch` engine for depth and GPU, factor
-embeddings (a neural analogue of `re()`), and uncertainty quantification for
-`method = "nn"` are natural extensions.
+**Future directions.** The optional `torch` engine and the stratum bootstrap
+of `nn_uncertainty()` both ship as of 1.0.0. What remains open is factor
+embeddings (a neural analogue of `re()`) and coefficient-level inference for
+`method = "nn"` — a variance for the parameters, which a bootstrap band on a
+fitted curve is not.

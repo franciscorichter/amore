@@ -118,6 +118,21 @@ otherwise \code{x_ev} / \code{x_nv}. \code{tvnl} uses \code{transformed_time} wh
 Undirected logs (senders only, no receiver/\code{TARGET} column) are supported.
 }
 
+\section{Name clashes with other relational-event packages}{
+
+The name \code{rem()} is used by three CRAN packages: this one,
+\pkg{relevent} (on CRAN since 2010) and \pkg{redeem} (2026). Attaching
+more than one of them masks the others, and R will say so at load time.
+
+The deeper issue is dispatch rather than masking. \code{amorem}'s fitted object
+has class \code{"rem"}, and \pkg{relevent} and \pkg{redeem} register S3 methods
+on that same class name, so merely \emph{loading} one of them --- attaching is
+not required --- can re-point \code{print()}, \code{summary()}, \code{plot()}, \code{predict()}
+and \code{logLik()} for objects fitted here. If you work with more than one of
+these packages in a session, call \code{amorem::rem()} explicitly and be
+deliberate about which package is loaded when you print or plot a fit.
+}
+
 \examples{
 set.seed(1)
 w <- simulate_relational_events(
