@@ -49,13 +49,15 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="amorem-development-version">amorem (development version)<a class="anchor" aria-label="anchor" href="#amorem-development-version"></a></h2>
-<ul><li>
-<strong>torch training engine for <code>rem(method = "nn")</code>.</strong> <code>nn_control(engine = "torch")</code> trains the same model and conditional-logistic loss as the built-in pure-R engine using  (libtorch autograd + Adam), markedly faster and, with <code>batch_strata</code>, scaling to large event logs (optionally on GPU). The fitted object is interchangeable with the R engine. <code>torch</code> is a <em>Suggests</em> dependency; the torch engine requires equal-sized strata.</li>
-<li>
-<strong><code><a href="../reference/nn_uncertainty.html">nn_uncertainty()</a></code></strong> quantifies uncertainty for a neural fit by a stratum bootstrap, returning partial-dependence uncertainty bands and a concordance confidence interval (with <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> methods) — the inferential counterpart the point-prediction <code>nn</code> backend otherwise lacks.</li>
+<div class="section level3">
+<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<ul><li><p><strong><code><a href="../reference/compare_models.html">compare_models()</a></code> did not stratify on the matched sets under </strong>survival<strong> before 3.7-3.</strong> The Cox formula was built with a namespace-qualified <code>survival::strata(stratum)</code>, and <code>terms(specials = )</code> does not match a qualified call, so the matched-set identifier was silently fitted as an ordinary factor covariate in an unstratified model. Coefficients and the <code>delta_AIC</code> column were unaffected; the absolute <code>log_lik</code> was shifted by <code>-n_events * log(n_strata)</code> and the degrees of freedom inflated by <code>n_strata - 1</code>, so reported <code>AIC</code> values were wrong. The same applied to the <code><a href="https://rdrr.io/pkg/survival/man/frailty.html" class="external-link">frailty()</a></code> terms on the random-effects path, which is why the <code>coxme</code> two-axis fit did not complete. All four call sites now use bare specials, which every <strong>survival</strong> version matches, and regression tests assert that <code>AIC == -2 * log_lik + 2 * df</code> and that no stratum dummies enter as covariates. Anyone who published absolute log-likelihood or AIC values from <code>compare_models(n_controls &gt; 1)</code> should re-run them.</p></li>
+<li><p><strong>torch training engine for <code>rem(method = "nn")</code>.</strong> <code>nn_control(engine = "torch")</code> trains the same model and conditional-logistic loss as the built-in pure-R engine using <strong>torch</strong> (libtorch autograd + Adam), markedly faster and, with <code>batch_strata</code>, scaling to large event logs (optionally on GPU). The fitted object is interchangeable with the R engine. <code>torch</code> is a <em>Suggests</em> dependency; the torch engine requires equal-sized strata.</p></li>
+<li><p><strong><code><a href="../reference/nn_uncertainty.html">nn_uncertainty()</a></code></strong> quantifies uncertainty for a neural fit by a stratum bootstrap, returning partial-dependence uncertainty bands and a concordance confidence interval (with <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> methods) — the inferential counterpart the point-prediction <code>nn</code> backend otherwise lacks.</p></li>
 </ul></div>
+</div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.0.0" id="amorem-100">amorem 1.0.0<a class="anchor" aria-label="anchor" href="#amorem-100"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.0" id="amorem-100">amorem 1.0.0<a class="anchor" aria-label="anchor" href="#amorem-100"></a></h2><p class="text-muted">CRAN release: 2026-06-29</p>
 <p>First CRAN release, under the name <strong>amorem</strong>. The package was renamed from the working name <code>amore</code>, which collided (case-insensitively) with the archived CRAN package <code>AMORE</code>. This release consolidates the 0.9.0 development line into the first stable, installable version: the unified <code><a href="../reference/rem.html">rem()</a></code> front-end (the <code>clogit</code>, <code>gam</code>, and <code>nn</code> backends, including the additive-spline architecture), the Gillespie / tau-leap simulation engine, the endogenous-statistics catalogue, and the martingale-residual goodness-of-fit family. Relative to 0.9.0 the package was renamed to <strong>amorem</strong> and the exported feature functions dropped their <code>compute_</code> prefix — <code>compute_endogenous_features()</code> and <code>compute_hyperedge_features()</code> became <code><a href="../reference/endogenous_features.html">endogenous_features()</a></code> and <code><a href="../reference/hyperedge_features.html">hyperedge_features()</a></code>; the rest of the API is unchanged.</p>
 </div>
     <div class="section level2">
@@ -97,7 +99,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

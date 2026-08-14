@@ -91,14 +91,16 @@ and graphical output below is produced by
 <code>paper/wiki/experiments/realdata.R</code>.</p>
 <hr>
 <div class="section level3">
-<h3 id="classroom-sender-frailty-flips-the-aic-ranking">Classroom · sender frailty flips the AIC ranking<a class="anchor" aria-label="anchor" href="#classroom-sender-frailty-flips-the-aic-ranking"></a>
+<h3 id="classroom-sender-frailty-narrows-but-does-not-reverse-the-count-familys-lead">Classroom · sender frailty narrows, but does not reverse, the count
+family’s lead<a class="anchor" aria-label="anchor" href="#classroom-sender-frailty-narrows-but-does-not-reverse-the-count-familys-lead"></a>
 </h3>
 <p>The central methodological lesson of Juozaitienė &amp; Wit (2024):
 without an actor-heterogeneity correction the <code>*_count</code>
 family silently absorbs sender activity differences, so it dominates the
 AIC table even when timing variants are the better description of the
 dynamics. Adding a Gamma <code><a href="https://rdrr.io/pkg/survival/man/frailty.html" class="external-link">survival::frailty()</a></code> on the sender
-flips the ranking.</p>
+absorbs a large part of that advantage — but on this stream it does not
+overturn it.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">classroom_events</span><span class="op">)</span></span>
 <span><span class="va">specs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -108,19 +110,20 @@ flips the ranking.</p>
 <span>                  <span class="st">"transitivity_time_recent_interrupted"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/compare_models.html">compare_models</a></span><span class="op">(</span><span class="va">classroom_events</span>, <span class="va">specs</span>, n_controls <span class="op">=</span> <span class="fl">3</span>, seed <span class="op">=</span> <span class="fl">11</span><span class="op">)</span></span>
-<span><span class="co">#&gt;         model n_terms n_obs  log_lik      AIC delta_AIC</span></span>
-<span><span class="co">#&gt; 1       count       2   691 -5248.2 11880.5     0.0</span></span>
-<span><span class="co">#&gt; 2  continuous       2   691 -5368.1 12120.2   239.7</span></span>
-<span><span class="co">#&gt; 3 interrupted       2   691 -5449.8 12283.6   403.1</span></span>
+<span><span class="co">#&gt;         model n_terms n_obs   log_lik      AIC delta_AIC</span></span>
+<span><span class="co">#&gt; 1       count       2   691 -730.3872 1464.774    0.0000</span></span>
+<span><span class="co">#&gt; 2  continuous       2   691 -850.2339 1704.468  239.6934</span></span>
+<span><span class="co">#&gt; 3 interrupted       2   691 -931.9619 1867.924  403.1494</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/compare_models.html">compare_models</a></span><span class="op">(</span><span class="va">classroom_events</span>, <span class="va">specs</span>, n_controls <span class="op">=</span> <span class="fl">3</span>, seed <span class="op">=</span> <span class="fl">11</span>,</span>
 <span>               random_effects <span class="op">=</span> <span class="st">"sender"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;         model n_terms n_obs  log_lik      AIC delta_AIC</span></span>
-<span><span class="co">#&gt; 1  continuous       2   691 -5177.7 11776.8     0.0</span></span>
-<span><span class="co">#&gt; 2 interrupted       2   691 -5269.4 11960.5   183.7</span></span>
-<span><span class="co">#&gt; 3       count       2   691      NA      NA     NA       # convergence failure</span></span></code></pre></div>
+<span><span class="co">#&gt;         model n_terms n_obs   log_lik      AIC delta_AIC</span></span>
+<span><span class="co">#&gt; 1       count       2   691 -587.5516 1216.857    0.0000</span></span>
+<span><span class="co">#&gt; 2  continuous       2   691 -659.9403 1362.168  145.3112</span></span>
+<span><span class="co">#&gt; 3 interrupted       2   691 -751.6045 1545.503  328.6461</span></span></code></pre></div>
 <div class="float">
-<img src="figures/realdata-classroom-flip.png" alt="Classroom flip"><div class="figcaption">Classroom flip</div>
+<img src="figures/realdata-classroom-flip.png" alt="Classroom AIC comparison with and without a sender frailty"><div class="figcaption">Classroom AIC comparison with and without a
+sender frailty</div>
 </div>
 <p>Two findings worth flagging:</p>
 <ol style="list-style-type: decimal">
@@ -225,7 +228,7 @@ s</strong>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

@@ -2,13 +2,34 @@
 
 ## amorem (development version)
 
+### Bug fixes
+
+- **[`compare_models()`](https://franciscorichter.github.io/amorem/reference/compare_models.md)
+  did not stratify on the matched sets under** survival **before
+  3.7-3.** The Cox formula was built with a namespace-qualified
+  `survival::strata(stratum)`, and `terms(specials = )` does not match a
+  qualified call, so the matched-set identifier was silently fitted as
+  an ordinary factor covariate in an unstratified model. Coefficients
+  and the `delta_AIC` column were unaffected; the absolute `log_lik` was
+  shifted by `-n_events * log(n_strata)` and the degrees of freedom
+  inflated by `n_strata - 1`, so reported `AIC` values were wrong. The
+  same applied to the
+  [`frailty()`](https://rdrr.io/pkg/survival/man/frailty.html) terms on
+  the random-effects path, which is why the `coxme` two-axis fit did not
+  complete. All four call sites now use bare specials, which every
+  **survival** version matches, and regression tests assert that
+  `AIC == -2 * log_lik + 2 * df` and that no stratum dummies enter as
+  covariates. Anyone who published absolute log-likelihood or AIC values
+  from `compare_models(n_controls > 1)` should re-run them.
+
 - **torch training engine for `rem(method = "nn")`.**
   `nn_control(engine = "torch")` trains the same model and
   conditional-logistic loss as the built-in pure-R engine using
-  (libtorch autograd + Adam), markedly faster and, with `batch_strata`,
-  scaling to large event logs (optionally on GPU). The fitted object is
-  interchangeable with the R engine. `torch` is a *Suggests* dependency;
-  the torch engine requires equal-sized strata.
+  **torch** (libtorch autograd + Adam), markedly faster and, with
+  `batch_strata`, scaling to large event logs (optionally on GPU). The
+  fitted object is interchangeable with the R engine. `torch` is a
+  *Suggests* dependency; the torch engine requires equal-sized strata.
+
 - **[`nn_uncertainty()`](https://franciscorichter.github.io/amorem/reference/nn_uncertainty.md)**
   quantifies uncertainty for a neural fit by a stratum bootstrap,
   returning partial-dependence uncertainty bands and a concordance
@@ -19,6 +40,8 @@
   otherwise lacks.
 
 ## amorem 1.0.0
+
+CRAN release: 2026-06-29
 
 First CRAN release, under the name **amorem**. The package was renamed
 from the working name `amore`, which collided (case-insensitively) with

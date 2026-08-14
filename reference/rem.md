@@ -165,6 +165,24 @@ spline-transformed covariate), otherwise `x_ev` / `x_nv`. `tvnl` uses
 `transformed_time` when present. Undirected logs (senders only, no
 receiver/`TARGET` column) are supported.
 
+## Name clashes with other relational-event packages
+
+The name `rem()` is used by three CRAN packages: this one, relevent (on
+CRAN since 2010) and redeem (2026). Attaching more than one of them
+masks the others, and R will say so at load time.
+
+The deeper issue is dispatch rather than masking. `amorem`'s fitted
+object has class `"rem"`, and relevent and redeem register S3 methods on
+that same class name, so merely *loading* one of them — attaching is not
+required — can re-point [`print()`](https://rdrr.io/r/base/print.html),
+[`summary()`](https://rdrr.io/r/base/summary.html),
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html),
+[`predict()`](https://rdrr.io/r/stats/predict.html) and
+[`logLik()`](https://rdrr.io/r/stats/logLik.html) for objects fitted
+here. If you work with more than one of these packages in a session,
+call `amorem::rem()` explicitly and be deliberate about which package is
+loaded when you print or plot a fit.
+
 ## See also
 
 [`compare_models_smooth()`](https://franciscorichter.github.io/amorem/reference/compare_models_smooth.md)

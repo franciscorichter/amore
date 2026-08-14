@@ -105,10 +105,9 @@ compare_models(classroom_events, specs,
 #> 3 interrupted       2   691 -931.9619 1867.924  403.1494
 ```
 
-The `n_obs` column now reports the number of strata (one per case), and
-`survival` is in the package’s *Suggests* — required only when
-`n_controls > 1`. AIC values across specs remain comparable because
-every spec sees the same shared case-control sample.
+The `n_obs` column now reports the number of strata (one per case). AIC
+values across specs remain comparable because every spec sees the same
+shared case-control sample.
 
 ## 4. Inspect coefficients of a chosen specification
 

@@ -203,6 +203,21 @@ otherwise <code>x_ev</code> / <code>x_nv</code>. <code>tvnl</code> uses <code>tr
 Undirected logs (senders only, no receiver/<code>TARGET</code> column) are supported.</p>
     </div>
     <div class="section level2">
+    <h2 id="name-clashes-with-other-relational-event-packages">Name clashes with other relational-event packages<a class="anchor" aria-label="anchor" href="#name-clashes-with-other-relational-event-packages"></a></h2>
+
+
+<p>The name <code>rem()</code> is used by three CRAN packages: this one,
+<span class="pkg">relevent</span> (on CRAN since 2010) and <span class="pkg">redeem</span> (2026). Attaching
+more than one of them masks the others, and R will say so at load time.</p>
+<p>The deeper issue is dispatch rather than masking. <code>amorem</code>'s fitted object
+has class <code>"rem"</code>, and <span class="pkg">relevent</span> and <span class="pkg">redeem</span> register S3 methods
+on that same class name, so merely <em>loading</em> one of them — attaching is
+not required — can re-point <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>
+and <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code> for objects fitted here. If you work with more than one of
+these packages in a session, call <code>amorem::rem()</code> explicitly and be
+deliberate about which package is loaded when you print or plot a fit.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="compare_models_smooth.html">compare_models_smooth()</a></code> (superseded), <code><a href="simulate_relational_events.html">simulate_relational_events()</a></code>
 (whose <code>wide = TRUE</code> output is a valid input here),
@@ -232,7 +247,7 @@ Undirected logs (senders only, no receiver/<code>TARGET</code> column) are suppo
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>
