@@ -1,6 +1,6 @@
 # Changelog
 
-## amorem (development version)
+## amorem 1.0.1
 
 ### Bug fixes
 
@@ -22,23 +22,6 @@
   covariates. Anyone who published absolute log-likelihood or AIC values
   from `compare_models(n_controls > 1)` should re-run them.
 
-- **torch training engine for `rem(method = "nn")`.**
-  `nn_control(engine = "torch")` trains the same model and
-  conditional-logistic loss as the built-in pure-R engine using
-  **torch** (libtorch autograd + Adam), markedly faster and, with
-  `batch_strata`, scaling to large event logs (optionally on GPU). The
-  fitted object is interchangeable with the R engine. `torch` is a
-  *Suggests* dependency; the torch engine requires equal-sized strata.
-
-- **[`nn_uncertainty()`](https://franciscorichter.github.io/amorem/reference/nn_uncertainty.md)**
-  quantifies uncertainty for a neural fit by a stratum bootstrap,
-  returning partial-dependence uncertainty bands and a concordance
-  confidence interval (with
-  [`print()`](https://rdrr.io/r/base/print.html) and
-  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) methods) —
-  the inferential counterpart the point-prediction `nn` backend
-  otherwise lacks.
-
 ## amorem 1.0.0
 
 CRAN release: 2026-06-29
@@ -59,6 +42,24 @@ prefix — `compute_endogenous_features()` and
 and
 [`hyperedge_features()`](https://franciscorichter.github.io/amorem/reference/hyperedge_features.md);
 the rest of the API is unchanged.
+
+### New features
+
+- **torch training engine for `rem(method = "nn")`.**
+  `nn_control(engine = "torch")` trains the same model and
+  conditional-logistic loss as the built-in pure-R engine using
+  **torch** (libtorch autograd + Adam), markedly faster and, with
+  `batch_strata`, scaling to large event logs (optionally on GPU). The
+  fitted object is interchangeable with the R engine. `torch` is a
+  *Suggests* dependency; the torch engine requires equal-sized strata.
+- **[`nn_uncertainty()`](https://franciscorichter.github.io/amorem/reference/nn_uncertainty.md)**
+  quantifies uncertainty for a neural fit by a stratum bootstrap,
+  returning partial-dependence uncertainty bands and a concordance
+  confidence interval (with
+  [`print()`](https://rdrr.io/r/base/print.html) and
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) methods) —
+  the inferential counterpart the point-prediction `nn` backend
+  otherwise lacks.
 
 ## amorem 0.9.0
 

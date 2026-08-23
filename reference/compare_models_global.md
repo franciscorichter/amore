@@ -163,9 +163,9 @@ compare_models_global(
                     time                     = "global_time")),
   global_covariates = g,
   seed = 11, k = 5)
-#> Warning: Fitting terminated with step failure - check results carefully
-#>         model n_terms n_obs       log_lik      AIC delta_AIC
-#> 1 with_global       4   691 -8.210987e-11   8.0000    0.0000
-#> 2 dyadic_only       2   691 -3.055233e+02 615.0466  607.0466
+#> Warning: compare_models_global: spec 'with_global' failed (NA/NaN/Inf in foreign function call (arg 3))
+#>         model n_terms n_obs   log_lik      AIC delta_AIC
+#> 1 dyadic_only       2   691 -305.5233 615.0466         0
+#> 2 with_global       4   691        NA       NA        NA
 # }
 ```

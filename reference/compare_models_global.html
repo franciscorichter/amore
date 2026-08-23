@@ -101,7 +101,7 @@ the residual time effect \(g_0(t)\) of paper eq. 3.
 
     <a class="navbar-brand me-2" href="../index.html">amorem</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -301,10 +301,10 @@ Series C. <a href="https://doi.org/10.1093/jrsssc/qlaf058" class="external-link"
 <span class="r-in"><span>                    time                     <span class="op">=</span> <span class="st">"global_time"</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  global_covariates <span class="op">=</span> <span class="va">g</span>,</span></span>
 <span class="r-in"><span>  seed <span class="op">=</span> <span class="fl">11</span>, k <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Fitting terminated with step failure - check results carefully</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         model n_terms n_obs       log_lik      AIC delta_AIC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 with_global       4   691 -8.210987e-11   8.0000    0.0000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 dyadic_only       2   691 -3.055233e+02 615.0466  607.0466</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>compare_models_global: spec 'with_global' failed (NA/NaN/Inf in foreign function call (arg 3))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         model n_terms n_obs   log_lik      AIC delta_AIC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 dyadic_only       2   691 -305.5233 615.0466         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 with_global       4   691        NA       NA        NA</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
