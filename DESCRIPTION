@@ -1,6 +1,6 @@
 Package: amorem
 Title: Augmented Modelling of Relational Events
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: c(
     person(given = "Francisco", family = "Richter", email = "richtf@usi.ch", role = c("aut", "cre", "cph")),
     person(given = "Martina", family = "Boschi", role = "aut"),
